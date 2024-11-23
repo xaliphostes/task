@@ -36,6 +36,69 @@ or
 make test
 ```
 
+# Example for an algorithm
+```cpp
+#include <task/Task.h>
+#include <task/Algorithm.h>
+
+class ExampleAlgorithm : public Algorithm {
+public:
+    void exec(const std::vector<std::any>& args = {}) override {
+        emit("log", std::vector<std::any>{std::string("Starting algorithm execution")});
+        
+        // Simulating a long run
+        for (int i = 0; i < 100; ++i) {
+            if (stopRequested()) {
+                emit("log", std::vector<std::any>{std::string("Algorithm stopped by user")});
+                return;
+            }
+
+            // Do something long...
+            std::this_thread::sleep_for(std::chrono::milliseconds(100));
+            
+            emit("log", std::vector<std::any>{
+                std::string("Processing: ") + std::to_string(i) + "%"
+            });
+        }
+        
+        emit("log", std::vector<std::any>{std::string("Algorithm completed")});
+    }
+};
+
+int main() {
+    ExampleAlgorithm algo;
+    
+    // Connecting the signals
+    algo.connect("started", [](const std::vector<std::any>& args) {
+        std::cout << "Algorithm started" << std::endl;
+    });
+
+    algo.connect("finished", [](const std::vector<std::any>& args) {
+        std::cout << "Algorithm finished" << std::endl;
+    });
+
+    algo.connect("log", [](const std::vector<std::any>& args) {
+        if (!args.empty()) {
+            try {
+                std::cout << std::any_cast<std::string>(args[0]) << std::endl;
+            } catch (const std::bad_any_cast&) {
+                std::cout << "Invalid log format" << std::endl;
+            }
+        }
+    });
+
+    // Run the algo asynchronously
+    auto future = algo.run();
+
+    // Possibility to stop the algorithm
+    std::this_thread::sleep_for(std::chrono::seconds(2));
+    algo.stop();
+
+    // Waiting for the algo to end
+    future.wait();
+}
+```
+
 ## Licence
 MIT
 

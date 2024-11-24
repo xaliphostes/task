@@ -21,29 +21,14 @@
  *
  */
 
-#include <task/SignalSlot.h>
+#include <task/Trigger.h>
 
-/*
-void SignalSlot::createSignal(const std::string& signal) {
-    if (hasSignal(signal)) {
-        std::cerr << "Signal '" << signal << "' already exists" << std::endl;
-        return;
-    }
-    m_signals[signal] = {};
+Trigger::Trigger()
+{
+    createSignal("tick");
 }
 
-void SignalSlot::emit(const std::string& signal, const std::vector<std::any>& args) {
-    if (!hasSignal(signal)) {
-        std::cerr << "Signal '" << signal << "' not found" << std::endl;
-        return;
-    }
-
-    for (const auto& connection : m_signals[signal]) {
-        connection->trigger(args);
-    }
+void Trigger::tick()
+{
+    emit("tick");
 }
-
-bool SignalSlot::hasSignal(const std::string& signal) const {
-    return m_signals.find(signal) != m_signals.end();
-}
-*/

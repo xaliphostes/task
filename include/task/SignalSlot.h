@@ -49,55 +49,98 @@ private:
     std::function<void(const std::vector<std::any>&)> m_func;
 };
 
-class MethodConnection : public Connection {
+class SimpleFunctionConnection : public Connection {
 public:
-    template<typename T>
-    MethodConnection(T* receiver, void (T::*method)(const std::vector<std::any>&)) {
-        m_func = [receiver, method](const std::vector<std::any>& args) {
-            (receiver->*method)(args);
-        };
-    }
+    explicit SimpleFunctionConnection(std::function<void()> func) 
+        : m_func(std::move(func)) {}
 
     void trigger(const std::vector<std::any>& args) override {
-        m_func(args);
+        m_func();
     }
 
 private:
-    std::function<void(const std::vector<std::any>&)> m_func;
+    std::function<void()> m_func;
 };
 
 class SignalSlot {
 public:
-    void createSignal(const std::string& signal);
-    
-    template<typename Func>
-    void connect(const std::string& signal, Func&& slot) {
+    void createSignal(const std::string& signal) {
+        if (hasSignal(signal)) {
+            std::cerr << "Signal '" << signal << "' already exists" << std::endl;
+            return;
+        }
+        m_signals[signal] = {};
+    }
+
+    // Pour les fonctions avec arguments
+    void connect(const std::string& signal, std::function<void(const std::vector<std::any>&)> slot) {
         if (!hasSignal(signal)) {
             std::cerr << "Signal '" << signal << "' not found" << std::endl;
             return;
         }
         
-        auto connection = std::make_shared<FunctionConnection>(
-            std::forward<Func>(slot)
-        );
+        auto connection = std::make_shared<FunctionConnection>(std::move(slot));
         m_signals[signal].push_back(connection);
     }
 
+    // Pour les fonctions sans arguments
+    void connect(const std::string& signal, std::function<void()> slot) {
+        if (!hasSignal(signal)) {
+            std::cerr << "Signal '" << signal << "' not found" << std::endl;
+            return;
+        }
+        
+        auto connection = std::make_shared<SimpleFunctionConnection>(std::move(slot));
+        m_signals[signal].push_back(connection);
+    }
+
+    // Pour les méthodes membres d'une classe
     template<typename T>
-    void connect(const std::string& signal, T* receiver, void (T::*method)(const std::vector<std::any>&)) {
+    void connect(const std::string& signal, T* instance, void (T::*method)(const std::vector<std::any>&)) {
         if (!hasSignal(signal)) {
             std::cerr << "Signal '" << signal << "' not found" << std::endl;
             return;
         }
 
-        auto connection = std::make_shared<MethodConnection>(receiver, method);
+        auto func = [instance, method](const std::vector<std::any>& args) {
+            (instance->*method)(args);
+        };
+        
+        auto connection = std::make_shared<FunctionConnection>(std::move(func));
         m_signals[signal].push_back(connection);
     }
 
-    void emit(const std::string& signal, const std::vector<std::any>& args = {});
+    // Pour les méthodes membres sans arguments
+    template<typename T>
+    void connect(const std::string& signal, T* instance, void (T::*method)()) {
+        if (!hasSignal(signal)) {
+            std::cerr << "Signal '" << signal << "' not found" << std::endl;
+            return;
+        }
+
+        auto func = [instance, method]() {
+            (instance->*method)();
+        };
+        
+        auto connection = std::make_shared<SimpleFunctionConnection>(std::move(func));
+        m_signals[signal].push_back(connection);
+    }
+
+    void emit(const std::string& signal, const std::vector<std::any>& args = {}) {
+        if (!hasSignal(signal)) {
+            std::cerr << "Signal '" << signal << "' not found" << std::endl;
+            return;
+        }
+
+        for (const auto& connection : m_signals[signal]) {
+            connection->trigger(args);
+        }
+    }
 
 protected:
-    bool hasSignal(const std::string& signal) const;
+    bool hasSignal(const std::string& signal) const {
+        return m_signals.find(signal) != m_signals.end();
+    }
 
 private:
     std::map<std::string, std::vector<std::shared_ptr<Connection>>> m_signals;

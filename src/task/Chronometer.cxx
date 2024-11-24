@@ -21,29 +21,32 @@
  *
  */
 
-#include <task/SignalSlot.h>
+#include <task/Chronometer.h>
 
-/*
-void SignalSlot::createSignal(const std::string& signal) {
-    if (hasSignal(signal)) {
-        std::cerr << "Signal '" << signal << "' already exists" << std::endl;
-        return;
-    }
-    m_signals[signal] = {};
+Chronometer::Chronometer() : m_startTime(nullptr) {}
+
+void Chronometer::start()
+{
+    m_startTime = std::make_unique<std::chrono::system_clock::time_point>(
+        std::chrono::system_clock::now());
+    emit("started");
 }
 
-void SignalSlot::emit(const std::string& signal, const std::vector<std::any>& args) {
-    if (!hasSignal(signal)) {
-        std::cerr << "Signal '" << signal << "' not found" << std::endl;
-        return;
+int64_t Chronometer::stop()
+{
+    if (!m_startTime)
+    {
+        emit("error", std::vector<std::any>{std::string("Chronometer not started.")});
+        return 0;
     }
 
-    for (const auto& connection : m_signals[signal]) {
-        connection->trigger(args);
-    }
-}
+    auto now = std::chrono::system_clock::now();
+    auto timeDiff = std::chrono::duration_cast<std::chrono::milliseconds>(
+                        now - *m_startTime)
+                        .count();
 
-bool SignalSlot::hasSignal(const std::string& signal) const {
-    return m_signals.find(signal) != m_signals.end();
+    emit("finished", std::vector<std::any>{timeDiff});
+    m_startTime.reset();
+
+    return timeDiff;
 }
-*/

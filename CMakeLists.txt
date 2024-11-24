@@ -66,6 +66,11 @@ set(SRC_task
     ./src/task/For.cxx
     ./src/task/FlowAlgorithm.cxx
     ./src/task/ParallelAlgorithm.cxx
+    ./src/task/Trigger.cxx
+    ./src/task/Chronometer.cxx
+
+    ./src/task/concurrent/Runnable.cxx
+    ./src/task/concurrent/ThreadPool.cxx
 )
 
 add_library(task-shared SHARED ${SRC_task})
@@ -79,3 +84,5 @@ set_target_properties(task-shared PROPERTIES PDB_OUTPUT_DIRECTORY ${DIST_DIR})
 # Testing...
 enable_testing()
 add_subdirectory(unitTest)
+add_subdirectory(examples/pi-1)
+add_subdirectory(examples/pi-2)

@@ -21,29 +21,17 @@
  *
  */
 
-#include <task/SignalSlot.h>
+#include "Task.h"
+#include <chrono>
+#include <memory>
 
-/*
-void SignalSlot::createSignal(const std::string& signal) {
-    if (hasSignal(signal)) {
-        std::cerr << "Signal '" << signal << "' already exists" << std::endl;
-        return;
-    }
-    m_signals[signal] = {};
-}
+class Chronometer : public Task {
+public:
+    Chronometer() ;
 
-void SignalSlot::emit(const std::string& signal, const std::vector<std::any>& args) {
-    if (!hasSignal(signal)) {
-        std::cerr << "Signal '" << signal << "' not found" << std::endl;
-        return;
-    }
+    void start() ;
+    int64_t stop() ;
 
-    for (const auto& connection : m_signals[signal]) {
-        connection->trigger(args);
-    }
-}
-
-bool SignalSlot::hasSignal(const std::string& signal) const {
-    return m_signals.find(signal) != m_signals.end();
-}
-*/
+private:
+    std::unique_ptr<std::chrono::system_clock::time_point> m_startTime;
+};

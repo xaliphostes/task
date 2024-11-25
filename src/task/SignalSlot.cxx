@@ -23,27 +23,83 @@
 
 #include <task/SignalSlot.h>
 
-/*
-void SignalSlot::createSignal(const std::string& signal) {
-    if (hasSignal(signal)) {
+Connection::~Connection() = default;
+
+// ----------------------------------------
+
+FunctionConnection::FunctionConnection(std::function<void(const Args &)> func) : m_func(std::move(func))
+{
+}
+
+void FunctionConnection::trigger(const Args &args)
+{
+    m_func(args);
+}
+
+// ----------------------------------------
+
+SimpleFunctionConnection::SimpleFunctionConnection(std::function<void()> func) : m_func(std::move(func))
+{
+}
+
+void SimpleFunctionConnection::trigger(const Args &args)
+{
+    m_func();
+}
+
+// ----------------------------------------
+
+void SignalSlot::createSignal(const std::string &signal)
+{
+    if (hasSignal(signal))
+    {
         std::cerr << "Signal '" << signal << "' already exists" << std::endl;
         return;
     }
     m_signals[signal] = {};
 }
 
-void SignalSlot::emit(const std::string& signal, const std::vector<std::any>& args) {
-    if (!hasSignal(signal)) {
+// Pour les fonctions avec arguments
+void SignalSlot::connect(const std::string &signal, std::function<void(const Args &)> slot)
+{
+    if (!hasSignal(signal))
+    {
         std::cerr << "Signal '" << signal << "' not found" << std::endl;
         return;
     }
 
-    for (const auto& connection : m_signals[signal]) {
+    auto connection = std::make_shared<FunctionConnection>(std::move(slot));
+    m_signals[signal].push_back(connection);
+}
+
+// Pour les fonctions sans arguments
+void SignalSlot::connect(const std::string &signal, std::function<void()> slot)
+{
+    if (!hasSignal(signal))
+    {
+        std::cerr << "Signal '" << signal << "' not found" << std::endl;
+        return;
+    }
+
+    auto connection = std::make_shared<SimpleFunctionConnection>(std::move(slot));
+    m_signals[signal].push_back(connection);
+}
+
+void SignalSlot::emit(const std::string &signal, const Args &args)
+{
+    if (!hasSignal(signal))
+    {
+        std::cerr << "Signal '" << signal << "' not found" << std::endl;
+        return;
+    }
+
+    for (const auto &connection : m_signals[signal])
+    {
         connection->trigger(args);
     }
 }
 
-bool SignalSlot::hasSignal(const std::string& signal) const {
+bool SignalSlot::hasSignal(const std::string &signal) const
+{
     return m_signals.find(signal) != m_signals.end();
 }
-*/

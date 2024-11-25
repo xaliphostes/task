@@ -25,7 +25,7 @@
 
 class LoopObserver {
 public:
-    void onTick(const std::vector<std::any>& args) {
+    void onTick(const Args& args) {
         if (args.empty()) return;
 
         try {

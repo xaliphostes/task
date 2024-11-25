@@ -27,7 +27,7 @@
 
 class Logger {
 public:
-    void onLog(const std::vector<std::any>& args) {
+    void onLog(const Args& args) {
         if (!args.empty()) {
             try {
                 std::cout << "Log: " << std::any_cast<std::string>(args[0]) << std::endl;
@@ -46,13 +46,13 @@ int main() {
     task.connect("log", &logger, &Logger::onLog);
 
     // Connexion avec une lambda
-    task.connect("started", [](const std::vector<std::any>& args) {
+    task.connect("started", [](const Args& args) {
         std::cout << "Task started!" << std::endl;
     });
 
     // Émission des signaux
     task.emit("started");
-    task.emit("log", std::vector<std::any>{std::string("Task is running...")});
+    task.emit("log", Args{std::string("Task is running...")});
 
     return 0;
 }

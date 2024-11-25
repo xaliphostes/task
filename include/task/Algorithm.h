@@ -33,7 +33,7 @@ public:
     Algorithm();
     virtual ~Algorithm() = default;
 
-    virtual void exec(const std::vector<std::any> &args = {}) = 0;
+    virtual void exec(const Args &args = {}) = 0;
 
     bool stopRequested() const;
     void stop();
@@ -43,10 +43,10 @@ public:
     void setDirty(bool dirty);
 
     // Asynchrone version of run
-    std::future<void> run(const std::vector<std::any> &args = {});
+    std::future<void> run(const Args &args = {});
 
 protected:
-    void runImpl(const std::vector<std::any> &args = {});
+    void runImpl(const Args &args = {});
 
 private:
     bool m_dirty;

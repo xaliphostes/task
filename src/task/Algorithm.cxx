@@ -42,13 +42,13 @@ void Algorithm::setDirty(bool dirty)
 }
 
 // Version asynchrone de run qui retourne un std::future
-std::future<void> Algorithm::run(const std::vector<std::any> &args)
+std::future<void> Algorithm::run(const Args &args)
 {
     return std::async(std::launch::async, [this, args]()
                       { this->runImpl(args); });
 }
 
-void Algorithm::runImpl(const std::vector<std::any> &args)
+void Algorithm::runImpl(const Args &args)
 {
     if (m_isRunning)
     {
@@ -72,7 +72,7 @@ void Algorithm::runImpl(const std::vector<std::any> &args)
     catch (...)
     {
         m_isRunning = false;
-        emit("error", std::vector<std::any>{std::string("Exception occurred during algorithm execution")});
+        emit("error", Args{std::string("Exception occurred during algorithm execution")});
         throw; // Re-throw the exception
     }
 

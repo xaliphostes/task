@@ -43,19 +43,19 @@ protected:
                 m_completedPoints += params.points;
                 double progress = (static_cast<double>(m_completedPoints) / m_totalPoints) * 100;
 
-                emit("log", std::vector<std::any>{
+                emit("log", Args{
                                 std::string("Progress: ") +
                                 std::to_string(static_cast<int>(progress)) + "%"});
             }
         }
         catch (const std::bad_any_cast &e)
         {
-            emit("error", std::vector<std::any>{
+            emit("error", Args{
                               std::string("Invalid job format: ") + e.what()});
         }
     }
 
-    void exec(const std::vector<std::any> &args = {}) override
+    void exec(const Args &args = {}) override
     {
         if (!m_isSetup) {
             setupJobs();
@@ -71,7 +71,7 @@ protected:
         // Calcul final de pi
         m_result = m_result / static_cast<double>(m_totalPoints) * 4.0;
 
-        emit("log", std::vector<std::any>{
+        emit("log", Args{
                         std::string("Final π value: ") +
                         std::to_string(m_result)});
     }
@@ -88,7 +88,7 @@ private:
         {
             if (stopRequested())
             {
-                emit("warn", std::vector<std::any>{
+                emit("warn", Args{
                                  std::string("Calculation stopped by user")});
                 return 0.0;
             }
@@ -111,7 +111,7 @@ private:
         size_t numCores = std::thread::hardware_concurrency();
         size_t pointsPerJob = m_totalPoints / numCores;
 
-        emit("log", std::vector<std::any>{
+        emit("log", Args{
                         std::string("Using ") + std::to_string(numCores) + " cores"});
 
         // Crée un job pour chaque cœur
@@ -146,9 +146,10 @@ private:
 int main()
 {
     // Création des composants
+    u_int64_t nbPts = 1e10 ;
     auto logger = std::make_shared<Logger>("π:");
     auto chrono = std::make_shared<Chronometer>();
-    auto piCalc = std::make_shared<PiCalculator>(10000000000); // 10 billion of points
+    auto piCalc = std::make_shared<PiCalculator>(nbPts); // 10 billion of points
 
     // Configuration du logging
     logger->connectAllSignalsTo(piCalc.get());

@@ -29,7 +29,7 @@ Logger::Logger(const std::string &prefix)
     : m_prefix(prefix) {}
 
 // Méthodes de journalisation
-void Logger::log(const std::vector<std::any> &args)
+void Logger::log(const Args &args)
 {
     if (!args.empty())
     {
@@ -44,7 +44,7 @@ void Logger::log(const std::vector<std::any> &args)
     }
 }
 
-void Logger::warn(const std::vector<std::any> &args)
+void Logger::warn(const Args &args)
 {
     if (!args.empty())
     {
@@ -61,7 +61,7 @@ void Logger::warn(const std::vector<std::any> &args)
     }
 }
 
-void Logger::error(const std::vector<std::any> &args)
+void Logger::error(const Args &args)
 {
     if (!args.empty())
     {

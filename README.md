@@ -43,25 +43,25 @@ make test
 
 class ExampleAlgorithm : public Algorithm {
 public:
-    void exec(const std::vector<std::any>& args = {}) override {
-        emit("log", std::vector<std::any>{std::string("Starting algorithm execution")});
+    void exec(const Args& args = {}) override {
+        emit("log", Args{std::string("Starting algorithm execution")});
         
         // Simulating a long run
         for (int i = 0; i < 100; ++i) {
             if (stopRequested()) {
-                emit("log", std::vector<std::any>{std::string("Algorithm stopped by user")});
+                emit("log", Args{std::string("Algorithm stopped by user")});
                 return;
             }
 
             // Do something long...
             std::this_thread::sleep_for(std::chrono::milliseconds(100));
             
-            emit("log", std::vector<std::any>{
+            emit("log", Args{
                 std::string("Processing: ") + std::to_string(i) + "%"
             });
         }
         
-        emit("log", std::vector<std::any>{std::string("Algorithm completed")});
+        emit("log", Args{std::string("Algorithm completed")});
     }
 };
 
@@ -69,15 +69,15 @@ int main() {
     ExampleAlgorithm algo;
     
     // Connecting the signals
-    algo.connect("started", [](const std::vector<std::any>& args) {
+    algo.connect("started", [](const Args& args) {
         std::cout << "Algorithm started" << std::endl;
     });
 
-    algo.connect("finished", [](const std::vector<std::any>& args) {
+    algo.connect("finished", [](const Args& args) {
         std::cout << "Algorithm finished" << std::endl;
     });
 
-    algo.connect("log", [](const std::vector<std::any>& args) {
+    algo.connect("log", [](const Args& args) {
         if (!args.empty()) {
             try {
                 std::cout << std::any_cast<std::string>(args[0]) << std::endl;

@@ -30,11 +30,11 @@
 class LongTask : public Algorithm
 {
 public:
-    void exec(const std::vector<std::any> &args = {}) override
+    void exec(const Args &args = {}) override
     {
-        emit("warn", std::vector<std::any>{std::string("LongTask is running...")});
+        emit("warn", Args{std::string("LongTask is running...")});
         std::this_thread::sleep_for(std::chrono::seconds(1));
-        emit("log", std::vector<std::any>{std::string("...done.")});
+        emit("log", Args{std::string("...done.")});
         emit("finished");
     }
 };
@@ -43,11 +43,11 @@ public:
 class VeryLongTask : public Algorithm
 {
 public:
-    void exec(const std::vector<std::any> &args = {}) override
+    void exec(const Args &args = {}) override
     {
-        emit("warn", std::vector<std::any>{std::string("VeryLongTask is running...")});
+        emit("warn", Args{std::string("VeryLongTask is running...")});
         std::this_thread::sleep_for(std::chrono::seconds(3));
-        emit("log", std::vector<std::any>{std::string("...done.")});
+        emit("log", Args{std::string("...done.")});
         emit("finished");
     }
 };
@@ -58,9 +58,9 @@ class View : public Task
 public:
     explicit View(int id) : m_id(id) {}
 
-    void update(const std::vector<std::any> &args)
+    void update(const Args &args)
     {
-        emit("log", std::vector<std::any>{
+        emit("log", Args{
                         std::string("    Updating View") + std::to_string(m_id)});
     }
 
@@ -103,7 +103,7 @@ public:
         m_longTask->connect("finished", [this]()
                             { m_timer->stop(); });
 
-        m_timer->connect("finished", [](const std::vector<std::any> &args)
+        m_timer->connect("finished", [](const Args &args)
                          {
             if (!args.empty()) {
                 auto ms = std::any_cast<int64_t>(args[0]);
@@ -114,7 +114,7 @@ public:
         m_longTask->connect("finished", [this]()
                             { m_veryLongTask->run(); });
         m_veryLongTask->connect("finished", [this]()
-                                { emit("log", std::vector<std::any>{std::string("All tasks are done!")}); });
+                                { emit("log", Args{std::string("All tasks are done!")}); });
 
         // Connexion des vues
         m_longTask->connect("finished", [this]()

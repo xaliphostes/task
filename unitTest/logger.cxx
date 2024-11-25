@@ -32,7 +32,7 @@ public:
     }
 
     void doSomething() {
-        emit("log", std::vector<std::any>{std::string("Starting task...")});
+        emit("log", Args{std::string("Starting task...")});
         
         try {
             // Simulation d'une opération qui pourrait échouer
@@ -40,15 +40,15 @@ public:
                 throw std::runtime_error("Something went wrong!");
             }
             
-            emit("log", std::vector<std::any>{std::string("Task completed successfully")});
+            emit("log", Args{std::string("Task completed successfully")});
         }
         catch (const std::exception& e) {
-            emit("error", std::vector<std::any>{std::string(e.what())});
+            emit("error", Args{std::string(e.what())});
         }
     }
 
     void warnTest() {
-        emit("warn", std::vector<std::any>{std::string("This is a warning message")});
+        emit("warn", Args{std::string("This is a warning message")});
     }
 };
 
@@ -70,7 +70,7 @@ int main() {
     task->warnTest();
 
     // Exemple with colors
-    logger->log(std::vector<std::any>{std::string("Information message")});
-    logger->warn(std::vector<std::any>{std::string("Warning message")});
-    logger->error(std::vector<std::any>{std::string("Error message")});
+    logger->log(Args{std::string("Information message")});
+    logger->warn(Args{std::string("Warning message")});
+    logger->error(Args{std::string("Error message")});
 }

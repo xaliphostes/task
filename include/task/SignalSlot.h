@@ -30,118 +30,55 @@
 #include <iostream>
 #include <any>
 
-class Connection {
+using Args = std::vector<std::any>;
+
+class Connection
+{
 public:
-    virtual void trigger(const std::vector<std::any>& args) = 0;
-    virtual ~Connection() = default;
+    virtual void trigger(const Args &args) = 0;
+    virtual ~Connection();
 };
 
-class FunctionConnection : public Connection {
+class FunctionConnection : public Connection
+{
 public:
-    explicit FunctionConnection(std::function<void(const std::vector<std::any>&)> func) 
-        : m_func(std::move(func)) {}
-
-    void trigger(const std::vector<std::any>& args) override {
-        m_func(args);
-    }
+    explicit FunctionConnection(std::function<void(const Args &)> func);
+    void trigger(const Args &args) override;
 
 private:
-    std::function<void(const std::vector<std::any>&)> m_func;
+    std::function<void(const Args &)> m_func;
 };
 
-class SimpleFunctionConnection : public Connection {
+class SimpleFunctionConnection : public Connection
+{
 public:
-    explicit SimpleFunctionConnection(std::function<void()> func) 
-        : m_func(std::move(func)) {}
-
-    void trigger(const std::vector<std::any>& args) override {
-        m_func();
-    }
+    explicit SimpleFunctionConnection(std::function<void()> func);
+    void trigger(const Args &args) override;
 
 private:
     std::function<void()> m_func;
 };
 
-class SignalSlot {
+class SignalSlot
+{
 public:
-    void createSignal(const std::string& signal) {
-        if (hasSignal(signal)) {
-            std::cerr << "Signal '" << signal << "' already exists" << std::endl;
-            return;
-        }
-        m_signals[signal] = {};
-    }
+    void createSignal(const std::string &signal);
+    void connect(const std::string &signal, std::function<void(const Args &)> slot);
+    void connect(const std::string &signal, std::function<void()> slot);
 
-    // Pour les fonctions avec arguments
-    void connect(const std::string& signal, std::function<void(const std::vector<std::any>&)> slot) {
-        if (!hasSignal(signal)) {
-            std::cerr << "Signal '" << signal << "' not found" << std::endl;
-            return;
-        }
-        
-        auto connection = std::make_shared<FunctionConnection>(std::move(slot));
-        m_signals[signal].push_back(connection);
-    }
+    template <typename T>
+    void connect(const std::string &signal, T *instance, void (T::*method)(const Args &));
 
-    // Pour les fonctions sans arguments
-    void connect(const std::string& signal, std::function<void()> slot) {
-        if (!hasSignal(signal)) {
-            std::cerr << "Signal '" << signal << "' not found" << std::endl;
-            return;
-        }
-        
-        auto connection = std::make_shared<SimpleFunctionConnection>(std::move(slot));
-        m_signals[signal].push_back(connection);
-    }
+    template <typename T>
+    void connect(const std::string &signal, T *instance, void (T::*method)());
 
-    // Pour les méthodes membres d'une classe
-    template<typename T>
-    void connect(const std::string& signal, T* instance, void (T::*method)(const std::vector<std::any>&)) {
-        if (!hasSignal(signal)) {
-            std::cerr << "Signal '" << signal << "' not found" << std::endl;
-            return;
-        }
-
-        auto func = [instance, method](const std::vector<std::any>& args) {
-            (instance->*method)(args);
-        };
-        
-        auto connection = std::make_shared<FunctionConnection>(std::move(func));
-        m_signals[signal].push_back(connection);
-    }
-
-    // Pour les méthodes membres sans arguments
-    template<typename T>
-    void connect(const std::string& signal, T* instance, void (T::*method)()) {
-        if (!hasSignal(signal)) {
-            std::cerr << "Signal '" << signal << "' not found" << std::endl;
-            return;
-        }
-
-        auto func = [instance, method]() {
-            (instance->*method)();
-        };
-        
-        auto connection = std::make_shared<SimpleFunctionConnection>(std::move(func));
-        m_signals[signal].push_back(connection);
-    }
-
-    void emit(const std::string& signal, const std::vector<std::any>& args = {}) {
-        if (!hasSignal(signal)) {
-            std::cerr << "Signal '" << signal << "' not found" << std::endl;
-            return;
-        }
-
-        for (const auto& connection : m_signals[signal]) {
-            connection->trigger(args);
-        }
-    }
+    void emit(const std::string &signal, const Args &args = {});
 
 protected:
-    bool hasSignal(const std::string& signal) const {
-        return m_signals.find(signal) != m_signals.end();
-    }
+    bool hasSignal(const std::string &signal) const;
 
 private:
     std::map<std::string, std::vector<std::shared_ptr<Connection>>> m_signals;
 };
+
+#include "SignalSlot.hxx"

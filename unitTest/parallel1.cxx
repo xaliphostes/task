@@ -32,14 +32,14 @@ public:
             std::string jobData = std::any_cast<std::string>(job);
             
             // Simulation d'un traitement
-            emit("log", std::vector<std::any>{
+            emit("log", Args{
                 std::string("Processing job: ") + jobData
             });
             
             // Simule un travail qui prend du temps
             std::this_thread::sleep_for(std::chrono::milliseconds(500));
             
-            emit("log", std::vector<std::any>{
+            emit("log", Args{
                 std::string("Completed job: ") + jobData
             });
         }

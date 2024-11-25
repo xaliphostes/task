@@ -36,7 +36,7 @@ int64_t Chronometer::stop()
 {
     if (!m_startTime)
     {
-        emit("error", std::vector<std::any>{std::string("Chronometer not started.")});
+        emit("error", Args{std::string("Chronometer not started.")});
         return 0;
     }
 
@@ -45,7 +45,7 @@ int64_t Chronometer::stop()
                         now - *m_startTime)
                         .count();
 
-    emit("finished", std::vector<std::any>{timeDiff});
+    emit("finished", Args{timeDiff});
     m_startTime.reset();
 
     return timeDiff;

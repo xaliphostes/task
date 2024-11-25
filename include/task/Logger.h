@@ -32,9 +32,9 @@ public:
     explicit Logger(const std::string& prefix = ">>") ;
     virtual ~Logger() = default;
 
-    void log(const std::vector<std::any>& args) ;
-    void warn(const std::vector<std::any>& args) ;
-    void error(const std::vector<std::any>& args) ;
+    void log(const Args& args) ;
+    void warn(const Args& args) ;
+    void error(const Args& args) ;
 
     // Méthode statique pour créer les signaux pour une tâche
     static void createSignalsFor(Task* task) ;

@@ -1,10 +1,10 @@
 
 #include <task/concurrent/Runnable.h>
 #include <task/concurrent/ThreadPool.h>
+#include <task/Chronometer.h>
 #include <random>
 #include <atomic>
 #include <iomanip>
-
 
 class PiWorker : public Runnable {
 public:
@@ -14,6 +14,7 @@ public:
         , m_result(result)
     {}
 
+protected:
     void runImpl() override {
         std::mt19937 gen(m_seed);
         std::uniform_real_distribution<> dis(-1.0, 1.0);
@@ -69,10 +70,16 @@ public:
 
 // Exemple d'utilisation
 int main() {
+    auto chrono = std::make_shared<Chronometer>();
+
     PiCalculator calc;
+    u_int64_t nbPts = 1e10 ;
     
-    std::cout << "Calculating Pi with 10M points..." << std::endl;
-    double pi = calc.calculate(10000000000);
+    std::cout << "Calculating Pi with " << nbPts << " points..." << std::endl;
+    chrono->start();
+    double pi = calc.calculate(nbPts);
+    double elapsed = chrono->stop() / 1000.0;  // Conversion en secondes
+    std::cout << "Calculation took " << elapsed << " seconds" << std::endl;
     std::cout << "π ≈ " << std::setprecision(15) << pi << std::endl;
     std::cout << "Real π = 3.141592653589793..." << std::endl;
 }

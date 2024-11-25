@@ -36,5 +36,5 @@ public:
     virtual void doJob(const std::any& job) = 0;
 
 protected:
-    std::vector<std::any> m_jobs;
+    Args m_jobs;
 };

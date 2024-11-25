@@ -41,7 +41,7 @@ public:
         {
             const auto &customJob = std::any_cast<CustomJob>(job);
 
-            emit("log", std::vector<std::any>{
+            emit("log", Args{
                             std::string("Processing custom job: ") + customJob.name});
 
             // Traitement des données
@@ -52,13 +52,13 @@ public:
                 // Vérifie si on doit arrêter
                 if (stopRequested())
                 {
-                    emit("warn", std::vector<std::any>{
+                    emit("warn", Args{
                                      std::string("Job cancelled: ") + customJob.name});
                     return;
                 }
             }
 
-            emit("log", std::vector<std::any>{
+            emit("log", Args{
                             std::string("Job completed: ") + customJob.name +
                             ", Result: " + std::to_string(sum)});
         }

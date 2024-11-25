@@ -30,7 +30,7 @@ void ThreadPool::add(std::unique_ptr<Runnable> runnable)
     runnables_.push_back(std::move(runnable));
 }
 
-void ThreadPool::exec(const std::vector<std::any> &args)
+void ThreadPool::exec(const Args &args)
 {
     std::vector<std::future<void>> futures;
     auto start = std::chrono::steady_clock::now();

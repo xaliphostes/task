@@ -47,7 +47,7 @@ void For::set(const ForParameters &params)
 
     if (m_start > m_stop && m_step > 0)
     {
-        emit("warn", std::vector<std::any>{
+        emit("warn", Args{
                          std::string("Bad configuration of the ForLoop")});
     }
 }
@@ -75,7 +75,7 @@ void For::start()
         tickData["stop"] = m_stop;
         tickData["current"] = m_current;
 
-        emit("tick", std::vector<std::any>{tickData});
+        emit("tick", Args{tickData});
     }
 }
 

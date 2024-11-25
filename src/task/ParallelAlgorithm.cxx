@@ -27,7 +27,7 @@
 #include <vector>
 #include <iostream>
 
-void ParallelAlgorithm::exec(const std::vector<std::any> &args)
+void ParallelAlgorithm::exec(const Args &args)
 {
     if (m_jobs.empty())
     {
@@ -50,7 +50,7 @@ void ParallelAlgorithm::exec(const std::vector<std::any> &args)
                     this->doJob(job);
                 }
                 catch (const std::exception& e) {
-                    emit("error", std::vector<std::any>{
+                    emit("error", Args{
                         std::string("Job failed: ") + e.what()
                     });
                 } }));

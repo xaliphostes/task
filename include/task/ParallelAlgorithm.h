@@ -29,5 +29,5 @@ public:
     ParallelAlgorithm() = default;
     virtual ~ParallelAlgorithm() = default;
 
-    void exec(const std::vector<std::any>& args = {}) override ;
+    void exec(const Args& args = {}) override ;
 };

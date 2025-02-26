@@ -21,56 +21,46 @@
  *
  */
 
-#include <task/ParallelAlgorithm.h>
 #include <task/Logger.h>
+#include <task/ParallelAlgorithm.h>
 
 // Pour une utilisation plus avancée avec des jobs personnalisés
-struct CustomJob
-{
+struct CustomJob {
     int id;
     std::string name;
     std::vector<double> data;
 };
 
-class AdvancedParallelAlgorithm : public ParallelAlgorithm
-{
-public:
-    void doJob(const std::any &job) override
-    {
-        try
-        {
+class AdvancedParallelAlgorithm : public ParallelAlgorithm {
+  public:
+    void doJob(const std::any &job) override {
+        try {
             const auto &customJob = std::any_cast<CustomJob>(job);
 
-            emit("log", Args{
-                            std::string("Processing custom job: ") + customJob.name});
+            emit("log",
+                 Args{std::string("Processing custom job: ") + customJob.name});
 
             // Traitement des données
             double sum = 0;
-            for (double value : customJob.data)
-            {
+            for (double value : customJob.data) {
                 sum += value;
                 // Vérifie si on doit arrêter
-                if (stopRequested())
-                {
-                    emit("warn", Args{
-                                     std::string("Job cancelled: ") + customJob.name});
+                if (stopRequested()) {
+                    emit("warn",
+                         Args{std::string("Job cancelled: ") + customJob.name});
                     return;
                 }
             }
 
-            emit("log", Args{
-                            std::string("Job completed: ") + customJob.name +
-                            ", Result: " + std::to_string(sum)});
-        }
-        catch (const std::bad_any_cast &e)
-        {
+            emit("log", Args{std::string("Job completed: ") + customJob.name +
+                             ", Result: " + std::to_string(sum)});
+        } catch (const std::bad_any_cast &e) {
             throw std::runtime_error("Invalid custom job format");
         }
     }
 };
 
-int main()
-{
+int main() {
     // Utilisation avancée avec jobs personnalisés
     auto advancedAlgo = std::make_shared<AdvancedParallelAlgorithm>();
 
@@ -79,9 +69,7 @@ int main()
 
     // Création d'un job personnalisé
     CustomJob job{
-        .id = 1,
-        .name = "Complex calculation",
-        .data = {1.0, 2.0, 3.0, 4.0}};
+        .id = 1, .name = "Complex calculation", .data = {1.0, 2.0, 3.0, 4.0}};
 
     advancedAlgo->addJob(job);
     advancedAlgo->run();

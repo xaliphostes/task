@@ -21,17 +21,15 @@
  *
  */
 
-#include <task/Trigger.h>
+#include <task/Algorithm.h>
 #include <task/Chronometer.h>
 #include <task/Logger.h>
-#include <task/Algorithm.h>
+#include <task/Trigger.h>
 
 // LongTask.h
-class LongTask : public Algorithm
-{
-public:
-    void exec(const Args &args = {}) override
-    {
+class LongTask : public Algorithm {
+  public:
+    void exec(const Args &args = {}) override {
         emit("warn", Args{std::string("LongTask is running...")});
         std::this_thread::sleep_for(std::chrono::seconds(1));
         emit("log", Args{std::string("...done.")});
@@ -40,11 +38,9 @@ public:
 };
 
 // VeryLongTask.h
-class VeryLongTask : public Algorithm
-{
-public:
-    void exec(const Args &args = {}) override
-    {
+class VeryLongTask : public Algorithm {
+  public:
+    void exec(const Args &args = {}) override {
         emit("warn", Args{std::string("VeryLongTask is running...")});
         std::this_thread::sleep_for(std::chrono::seconds(3));
         emit("log", Args{std::string("...done.")});
@@ -53,27 +49,23 @@ public:
 };
 
 // View.h
-class View : public Task
-{
-public:
+class View : public Task {
+  public:
     explicit View(int id) : m_id(id) {}
 
-    void update(const Args &args)
-    {
-        emit("log", Args{
-                        std::string("    Updating View") + std::to_string(m_id)});
+    void update(const Args &args) {
+        emit("log",
+             Args{std::string("    Updating View") + std::to_string(m_id)});
     }
 
-private:
+  private:
     int m_id;
 };
 
 // Workflow.h
-class Workflow : public Task
-{
-public:
-    Workflow()
-    {
+class Workflow : public Task {
+  public:
+    Workflow() {
         // Création des composants
         m_log = std::make_shared<Logger>("--->");
         m_timer = std::make_shared<Chronometer>();
@@ -81,8 +73,7 @@ public:
         m_veryLongTask = std::make_shared<VeryLongTask>();
 
         // Création des vues
-        for (int i = 0; i < 3; ++i)
-        {
+        for (int i = 0; i < 3; ++i) {
             m_views.push_back(std::make_shared<View>(i));
         }
 
@@ -90,52 +81,45 @@ public:
         m_log->connectAllSignalsTo(m_longTask.get());
         m_log->connectAllSignalsTo(m_veryLongTask.get());
         m_log->connectAllSignalsTo(this);
-        for (auto &view : m_views)
-        {
+        for (auto &view : m_views) {
             m_log->connectAllSignalsTo(view.get());
         }
 
         // Connexion des signaux timer
-        this->connect("started", [this]()
-                      { m_timer->start(); });
-        m_veryLongTask->connect("finished", [this]()
-                                { m_timer->stop(); });
-        m_longTask->connect("finished", [this]()
-                            { m_timer->stop(); });
+        this->connect("started", [this]() { m_timer->start(); });
+        m_veryLongTask->connect("finished", [this]() { m_timer->stop(); });
+        m_longTask->connect("finished", [this]() { m_timer->stop(); });
 
-        m_timer->connect("finished", [](const Args &args)
-                         {
+        m_timer->connect("finished", [](const Args &args) {
             if (!args.empty()) {
                 auto ms = std::any_cast<int64_t>(args[0]);
                 std::cout << "--> Elapsed time: " << ms << " ms" << std::endl;
-            } });
+            }
+        });
 
         // Connexion des tâches
-        m_longTask->connect("finished", [this]()
-                            { m_veryLongTask->run(); });
-        m_veryLongTask->connect("finished", [this]()
-                                { emit("log", Args{std::string("All tasks are done!")}); });
+        m_longTask->connect("finished", [this]() { m_veryLongTask->run(); });
+        m_veryLongTask->connect("finished", [this]() {
+            emit("log", Args{std::string("All tasks are done!")});
+        });
 
         // Connexion des vues
-        m_longTask->connect("finished", [this]()
-                            { m_views[0]->update({}); });
-        m_longTask->connect("finished", [this]()
-                            { m_views[2]->update({}); });
-        m_veryLongTask->connect("finished", [this]()
-                                { m_views[1]->update({}); });
-        m_veryLongTask->connect("finished", [this]()
-                                { m_views[2]->update({}); });
-        m_veryLongTask->connect("finished", []()
-                                { std::cout << "END" << std::endl; });
+        m_longTask->connect("finished", [this]() { m_views[0]->update({}); });
+        m_longTask->connect("finished", [this]() { m_views[2]->update({}); });
+        m_veryLongTask->connect("finished",
+                                [this]() { m_views[1]->update({}); });
+        m_veryLongTask->connect("finished",
+                                [this]() { m_views[2]->update({}); });
+        m_veryLongTask->connect("finished",
+                                []() { std::cout << "END" << std::endl; });
     }
 
-    void start()
-    {
+    void start() {
         emit("started");
         m_longTask->run();
     }
 
-private:
+  private:
     std::shared_ptr<Logger> m_log;
     std::shared_ptr<Chronometer> m_timer;
     std::shared_ptr<LongTask> m_longTask;
@@ -144,8 +128,7 @@ private:
 };
 
 // Exemple d'utilisation
-int main()
-{
+int main() {
     auto button = std::make_shared<Trigger>();
     auto workflow = std::make_shared<Workflow>();
 

@@ -27,44 +27,41 @@ Connection::~Connection() = default;
 
 // ----------------------------------------
 
-FunctionConnection::FunctionConnection(std::function<void(const Args &)> func) : m_func(std::move(func))
-{
-}
+FunctionConnection::FunctionConnection(Function func)
+    : m_func(std::move(func)) {}
 
-void FunctionConnection::trigger(const Args &args)
-{
-    m_func(args);
-}
+void FunctionConnection::trigger(const Args &args) { m_func(args); }
 
 // ----------------------------------------
 
-SimpleFunctionConnection::SimpleFunctionConnection(std::function<void()> func) : m_func(std::move(func))
-{
-}
+SimpleFunctionConnection::SimpleFunctionConnection(Function func)
+    : m_func(std::move(func)) {}
 
-void SimpleFunctionConnection::trigger(const Args &args)
-{
-    m_func();
-}
+void SimpleFunctionConnection::trigger(const Args &args) { m_func(); }
 
 // ----------------------------------------
 
-void SignalSlot::createSignal(const std::string &signal)
-{
-    if (hasSignal(signal))
-    {
-        std::cerr << "Signal '" << signal << "' already exists" << std::endl;
+SignalSlot::SignalSlot(std::ostream &output_stream)
+    : m_output_stream(output_stream) {}
+
+void SignalSlot::setOutputStream(std::ostream &stream) {
+    m_output_stream = stream;
+}
+std::ostream &SignalSlot::stream() const { return m_output_stream; }
+
+void SignalSlot::createSignal(const std::string &signal) {
+    if (hasSignal(signal)) {
+        stream() << "Signal '" << signal << "' already exists" << std::endl;
         return;
     }
     m_signals[signal] = {};
 }
 
 // Pour les fonctions avec arguments
-void SignalSlot::connect(const std::string &signal, std::function<void(const Args &)> slot)
-{
-    if (!hasSignal(signal))
-    {
-        std::cerr << "Signal '" << signal << "' not found" << std::endl;
+void SignalSlot::connect(const std::string &signal,
+                         std::function<void(const Args &)> slot) {
+    if (!hasSignal(signal)) {
+        stream() << "Signal '" << signal << "' not found" << std::endl;
         return;
     }
 
@@ -73,33 +70,29 @@ void SignalSlot::connect(const std::string &signal, std::function<void(const Arg
 }
 
 // Pour les fonctions sans arguments
-void SignalSlot::connect(const std::string &signal, std::function<void()> slot)
-{
-    if (!hasSignal(signal))
-    {
-        std::cerr << "Signal '" << signal << "' not found" << std::endl;
+void SignalSlot::connect(const std::string &signal,
+                         std::function<void()> slot) {
+    if (!hasSignal(signal)) {
+        stream() << "Signal '" << signal << "' not found" << std::endl;
         return;
     }
 
-    auto connection = std::make_shared<SimpleFunctionConnection>(std::move(slot));
+    auto connection =
+        std::make_shared<SimpleFunctionConnection>(std::move(slot));
     m_signals[signal].push_back(connection);
 }
 
-void SignalSlot::emit(const std::string &signal, const Args &args)
-{
-    if (!hasSignal(signal))
-    {
-        std::cerr << "Signal '" << signal << "' not found" << std::endl;
+void SignalSlot::emit(const std::string &signal, const Args &args) {
+    if (!hasSignal(signal)) {
+        stream() << "Signal '" << signal << "' not found" << std::endl;
         return;
     }
 
-    for (const auto &connection : m_signals[signal])
-    {
+    for (const auto &connection : m_signals[signal]) {
         connection->trigger(args);
     }
 }
 
-bool SignalSlot::hasSignal(const std::string &signal) const
-{
+bool SignalSlot::hasSignal(const std::string &signal) const {
     return m_signals.find(signal) != m_signals.end();
 }

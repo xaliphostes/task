@@ -22,63 +22,75 @@
  */
 
 #pragma once
-#include <string>
-#include <map>
-#include <vector>
+#include "types.h"
 #include <functional>
-#include <memory>
 #include <iostream>
-#include <any>
+#include <map>
+#include <memory>
+#include <string>
 
-using Args = std::vector<std::any>;
+// ----------------------------------------
 
-class Connection
-{
-public:
+class Connection {
+  public:
     virtual void trigger(const Args &args) = 0;
     virtual ~Connection();
 };
 
-class FunctionConnection : public Connection
-{
-public:
-    explicit FunctionConnection(std::function<void(const Args &)> func);
+// ----------------------------------------
+
+class FunctionConnection : public Connection {
+  public:
+    using Function = std::function<void(const Args &)>;
+
+    explicit FunctionConnection(Function func);
     void trigger(const Args &args) override;
 
-private:
-    std::function<void(const Args &)> m_func;
+  private:
+    Function m_func;
 };
 
-class SimpleFunctionConnection : public Connection
-{
-public:
-    explicit SimpleFunctionConnection(std::function<void()> func);
+// ----------------------------------------
+
+class SimpleFunctionConnection : public Connection {
+  public:
+    using Function = std::function<void()>;
+    explicit SimpleFunctionConnection(Function func);
     void trigger(const Args &args) override;
 
-private:
-    std::function<void()> m_func;
+  private:
+    Function m_func;
 };
 
-class SignalSlot
-{
-public:
-    void createSignal(const std::string &signal);
-    void connect(const std::string &signal, std::function<void(const Args &)> slot);
-    void connect(const std::string &signal, std::function<void()> slot);
+// ----------------------------------------
+
+class SignalSlot {
+  public:
+    SignalSlot(std::ostream & = std::cerr);
+
+    void setOutputStream(std::ostream &);
+    std::ostream &stream() const;
+
+    void createSignal(const std::string &);
+
+    void connect(const std::string &, std::function<void(const Args &)>);
+    void connect(const std::string &, std::function<void()>);
 
     template <typename T>
-    void connect(const std::string &signal, T *instance, void (T::*method)(const Args &));
-
+    void connect(const std::string &, T *, void (T::*method)(const Args &));
     template <typename T>
-    void connect(const std::string &signal, T *instance, void (T::*method)());
+    void connect(const std::string &, T *, void (T::*method)());
 
-    void emit(const std::string &signal, const Args &args = {});
+    void emit(const std::string &, const Args &args = {});
 
-protected:
-    bool hasSignal(const std::string &signal) const;
+  protected:
+    bool hasSignal(const std::string &) const;
 
-private:
+  private:
     std::map<std::string, std::vector<std::shared_ptr<Connection>>> m_signals;
+    std::reference_wrapper<std::ostream> m_output_stream;
 };
+
+// ----------------------------------------
 
 #include "SignalSlot.hxx"

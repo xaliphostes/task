@@ -21,39 +21,8 @@
  *
  */
 
+#pragma once
+#include <vector>
 #include <any>
-#include <iostream>
-#include <task/Task.h>
 
-class Logger {
-  public:
-    void onLog(const Args &args) {
-        if (!args.empty()) {
-            try {
-                std::cout << "Log: " << std::any_cast<std::string>(args[0])
-                          << std::endl;
-            } catch (const std::bad_any_cast &) {
-                std::cout << "Log: [invalid format]" << std::endl;
-            }
-        }
-    }
-};
-
-int main() {
-    Task task;
-    Logger logger;
-
-    // Connexion avec une méthode
-    task.connect("log", &logger, &Logger::onLog);
-
-    // Connexion avec une lambda
-    task.connect("started", [](const Args &args) {
-        std::cout << "Task started!" << std::endl;
-    });
-
-    // Émission des signaux
-    task.emit("started");
-    task.emit("log", Args{std::string("Task is running...")});
-
-    return 0;
-}
+using Args = std::vector<std::any>;

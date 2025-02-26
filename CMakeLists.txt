@@ -57,23 +57,8 @@ else()
 endif()
 
 include_directories(include)
+add_subdirectory(src)
 
-set(SRC_task
-    ./src/task/SignalSlot.cxx
-    ./src/task/Task.cxx
-    ./src/task/Algorithm.cxx
-    ./src/task/Logger.cxx
-    ./src/task/For.cxx
-    ./src/task/FlowAlgorithm.cxx
-    ./src/task/ParallelAlgorithm.cxx
-    ./src/task/Trigger.cxx
-    ./src/task/Chronometer.cxx
-
-    ./src/task/concurrent/Runnable.cxx
-    ./src/task/concurrent/ThreadPool.cxx
-)
-
-add_library(task-shared SHARED ${SRC_task})
 set_target_properties(task-shared PROPERTIES OUTPUT_NAME Task)
 
 set_target_properties(task-shared PROPERTIES ARCHIVE_OUTPUT_DIRECTORY ${DIST_DIR})
@@ -81,7 +66,6 @@ set_target_properties(task-shared PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${DIST_DIR
 set_target_properties(task-shared PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${DIST_DIR})
 set_target_properties(task-shared PROPERTIES PDB_OUTPUT_DIRECTORY ${DIST_DIR})
 
-# Testing...
 enable_testing()
 add_subdirectory(unitTest)
 add_subdirectory(examples/pi-1)

@@ -21,29 +21,24 @@
  *
  */
 
-#include <task/ParallelAlgorithm.h>
 #include <task/Logger.h>
+#include <task/ParallelAlgorithm.h>
 
 class ExampleParallelAlgorithm : public ParallelAlgorithm {
-public:
-    void doJob(const std::any& job) override {
+  public:
+    void doJob(const std::any &job) override {
         try {
             // Conversion du job en string pour l'exemple
             std::string jobData = std::any_cast<std::string>(job);
-            
+
             // Simulation d'un traitement
-            emit("log", Args{
-                std::string("Processing job: ") + jobData
-            });
-            
+            emit("log", Args{std::string("Processing job: ") + jobData});
+
             // Simule un travail qui prend du temps
             std::this_thread::sleep_for(std::chrono::milliseconds(500));
-            
-            emit("log", Args{
-                std::string("Completed job: ") + jobData
-            });
-        }
-        catch (const std::bad_any_cast& e) {
+
+            emit("log", Args{std::string("Completed job: ") + jobData});
+        } catch (const std::bad_any_cast &e) {
             throw std::runtime_error("Invalid job data format");
         }
     }
@@ -53,7 +48,7 @@ public:
 int main() {
     // Création de l'algorithme
     auto algorithm = std::make_shared<ExampleParallelAlgorithm>();
-    
+
     // Ajout d'un logger
     auto logger = std::make_shared<Logger>();
     logger->connectAllSignalsTo(algorithm.get());

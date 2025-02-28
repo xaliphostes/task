@@ -23,18 +23,18 @@
 
 #pragma once
 #include "Algorithm.h"
-#include <vector>
 #include <any>
+#include <vector>
 
 class FlowAlgorithm : public Algorithm {
-public:
+  public:
     FlowAlgorithm() = default;
     virtual ~FlowAlgorithm() = default;
 
-    void addJob(const std::any& job) ;
-    void clearJobs() ;
-    virtual void doJob(const std::any& job) = 0;
+    void addJob(const std::any &job);
+    void clearJobs();
+    virtual void doJob(const std::any &job) = 0;
 
-protected:
-    Args m_jobs;
+  protected:
+    std::vector<std::any> m_jobs;
 };

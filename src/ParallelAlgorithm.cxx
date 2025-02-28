@@ -22,45 +22,99 @@
  */
 
 #include <task/ParallelAlgorithm.h>
-#include <thread>
 #include <future>
+#include <thread>
 #include <vector>
-#include <iostream>
 
-void ParallelAlgorithm::exec(const Args &args)
-{
-    if (m_jobs.empty())
-    {
+ParallelAlgorithm::ParallelAlgorithm() {
+    // Create additional signals specific to parallel processing
+    createDataSignal("job_started");
+    createDataSignal("job_finished");
+}
+
+void ParallelAlgorithm::exec(const ArgumentPack &args) {
+    if (m_jobs.empty()) {
+        emitString("log", "No jobs to execute");
         emit("finished");
         return;
     }
 
     emit("started");
+    emitString("log", "Starting parallel execution of " +
+                          std::to_string(m_jobs.size()) + " jobs");
 
-    // Création des futures pour chaque job
+    // Create futures for each job
     std::vector<std::future<void>> futures;
     futures.reserve(m_jobs.size());
 
-    // Lance chaque job dans un thread séparé
-    for (const auto &job : m_jobs)
-    {
-        futures.push_back(std::async(std::launch::async, [this, job]()
-                                     {
-                try {
-                    this->doJob(job);
-                }
-                catch (const std::exception& e) {
-                    emit("error", Args{
-                        std::string("Job failed: ") + e.what()
-                    });
-                } }));
+    // Launch each job in a separate thread
+    for (size_t i = 0; i < m_jobs.size(); ++i) {
+        const auto &job = m_jobs[i];
+        futures.push_back(std::async(std::launch::async, [this, job, i]() {
+            if (stopRequested()) {
+                ArgumentPack jobArgs;
+                jobArgs.add<size_t>(i);
+                emit("job_started", jobArgs);
+                emitString("warn", "Job " + std::to_string(i) +
+                                       " skipped due to stop request");
+                return;
+            }
+
+            try {
+                // Signal that job is starting
+                ArgumentPack startArgs;
+                startArgs.add<size_t>(i);
+                emit("job_started", startArgs);
+
+                // Execute the job
+                this->doJob(job);
+
+                // Signal that job is finished
+                ArgumentPack finishArgs;
+                finishArgs.add<size_t>(i);
+                finishArgs.add<bool>(true); // Success
+                emit("job_finished", finishArgs);
+
+                // Report progress
+                float progress = static_cast<float>(i + 1) /
+                                 static_cast<float>(m_jobs.size());
+                reportProgress(progress);
+
+            } catch (const std::exception &e) {
+                // Create an ArgumentPack for the error message
+                ArgumentPack errorArgs;
+                errorArgs.add<std::string>("Job " + std::to_string(i) +
+                                           " failed: " + e.what());
+                emit("error", errorArgs);
+
+                // Signal that job is finished with error
+                ArgumentPack finishArgs;
+                finishArgs.add<size_t>(i);
+                finishArgs.add<bool>(false); // Failure
+                emit("job_finished", finishArgs);
+            }
+        }));
     }
 
-    // Attend que tous les jobs soient terminés
-    for (auto &future : futures)
-    {
+    // Wait for all jobs to complete
+    for (auto &future : futures) {
+        if (stopRequested()) {
+            emitString("warn", "Execution stopped by user request");
+            break;
+        }
         future.wait();
     }
 
+    // If we were requested to stop, some futures might still be running
+    if (stopRequested()) {
+        emitString("log", "Waiting for running jobs to complete...");
+
+        // We still need to wait for futures that might be running
+        for (auto &future : futures) {
+            future.wait();
+        }
+    }
+
+    emitString("log", "Parallel execution completed");
     emit("finished");
 }

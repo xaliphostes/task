@@ -21,39 +21,48 @@
  *
  */
 
-#include <task/Algorithm.h>
+#include <any>
+#include <vector>
 
-Algorithm::Algorithm() : m_dirty(true),
-                         m_stopRequested(false),
-                         m_isRunning(false) {}
+// A simple algorithm that demonstrates the signal-slot system
+inline Algorithm::Algorithm()
+    : m_dirty(true), m_stopRequested(false), m_isRunning(false) {
+    // Add a progress signal that takes a float parameter
+    createDataSignal("progress");
+}
 
-bool Algorithm::stopRequested() const { return m_stopRequested; }
-void Algorithm::stop() { m_stopRequested = true; }
-bool Algorithm::isRunning() const { return m_isRunning; }
-bool Algorithm::isDirty() const { return m_dirty; }
+inline bool Algorithm::stopRequested() const { return m_stopRequested; }
 
-void Algorithm::setDirty(bool dirty)
-{
+inline void Algorithm::stop() { m_stopRequested = true; }
+
+inline bool Algorithm::isRunning() const { return m_isRunning; }
+
+inline bool Algorithm::isDirty() const { return m_dirty; }
+
+inline void Algorithm::setDirty(bool dirty) {
     m_dirty = dirty;
-    if (dirty)
-    {
+    if (dirty) {
         m_stopRequested = true;
     }
 }
 
-// Version asynchrone de run qui retourne un std::future
-std::future<void> Algorithm::run(const Args &args)
-{
-    return std::async(std::launch::async, [this, args]()
-                      { this->runImpl(args); });
+// Report progress (0.0 to 1.0)
+inline void Algorithm::reportProgress(float progress) {
+    ArgumentPack args;
+    args.add<float>(progress);
+    emit("progress", args);
 }
 
-void Algorithm::runImpl(const Args &args)
-{
-    if (m_isRunning)
-    {
-        if (m_dirty)
-        {
+// Asynchronous execution with variable arguments
+inline std::future<void> Algorithm::run(const ArgumentPack &args) {
+    auto argsClone = args.clone();
+    return std::async(std::launch::async,
+                      [this, argsClone = std::move(argsClone)]() { this->runImpl(argsClone); });
+}
+
+inline void Algorithm::runImpl(const ArgumentPack &args) {
+    if (m_isRunning) {
+        if (m_dirty) {
             m_stopRequested = true;
         }
         return;
@@ -65,14 +74,15 @@ void Algorithm::runImpl(const Args &args)
 
     emit("started");
 
-    try
-    {
+    try {
         exec(args);
-    }
-    catch (...)
-    {
+    } catch (const std::exception &e) {
         m_isRunning = false;
-        emit("error", Args{std::string("Exception occurred during algorithm execution")});
+        emitString("error", e.what());
+        throw; // Re-throw the exception
+    } catch (...) {
+        m_isRunning = false;
+        emitString("error", "Unknown exception during algorithm execution");
         throw; // Re-throw the exception
     }
 

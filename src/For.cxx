@@ -29,15 +29,13 @@ ForParameters::ForParameters(int start_, int stop_, int step_)
 // ---------------------------------------------
 
 For::For(const ForParameters &params)
-    : m_start(0), m_stop(10), m_step(1), m_current(0)
-{
-    createSignal("tick");
+    : m_start(0), m_stop(10), m_step(1), m_current(0) {
+    createDataSignal("tick"); // This line is likely missing!
     set(params);
 }
 
 // Configuration de la boucle
-void For::set(const ForParameters &params)
-{
+void For::set(const ForParameters &params) {
     if (params.start)
         m_start = *params.start;
     if (params.stop)
@@ -45,10 +43,8 @@ void For::set(const ForParameters &params)
     if (params.step)
         m_step = *params.step;
 
-    if (m_start > m_stop && m_step > 0)
-    {
-        emit("warn", Args{
-                         std::string("Bad configuration of the ForLoop")});
+    if (m_start > m_stop && m_step > 0) {
+        emitString("warn", "Bad configuration of the ForLoop");
     }
 }
 
@@ -65,22 +61,20 @@ void For::setStepValue(int value) { m_step = value; }
 int For::getCurrentValue() const { return m_current; }
 
 // Démarrage de la boucle
-void For::start()
-{
-    for (m_current = m_start; m_current != m_stop; m_current += m_step)
-    {
-        // Création d'un map pour les données à émettre
-        std::map<std::string, std::any> tickData;
-        tickData["start"] = m_start;
-        tickData["stop"] = m_stop;
-        tickData["current"] = m_current;
+void For::start() {
+    for (m_current = m_start; m_current != m_stop; m_current += m_step) {
+        // Create an ArgumentPack with all loop information
+        ArgumentPack tickData;
+        tickData.add<int>(m_start);   // Index 0: start
+        tickData.add<int>(m_stop);    // Index 1: stop
+        tickData.add<int>(m_current); // Index 2: current
+        tickData.add<int>(m_step);    // Index 3: step
 
-        emit("tick", Args{tickData});
+        // Emit the tick signal with the loop data
+        emit("tick", tickData);
     }
 }
 
-std::future<void> For::startAsync()
-{
-    return std::async(std::launch::async, [this]()
-                      { this->start(); });
+std::future<void> For::startAsync() {
+    return std::async(std::launch::async, [this]() { this->start(); });
 }

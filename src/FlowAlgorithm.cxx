@@ -23,14 +23,22 @@
 
 #include <task/FlowAlgorithm.h>
 
-// Ajoute un job à la liste
-void FlowAlgorithm::addJob(const std::any &job)
-{
+void FlowAlgorithm::addJob(const std::any &job) {
     m_jobs.push_back(job);
+
+    // Emit a signal to indicate job has been added
+    ArgumentPack args;
+    args.add<size_t>(m_jobs.size());
+    emitString("log",
+               "Job added. Total jobs: " + std::to_string(m_jobs.size()));
 }
 
-// Vide la liste des jobs
-void FlowAlgorithm::clearJobs()
-{
+void FlowAlgorithm::clearJobs() {
+    size_t oldSize = m_jobs.size();
     m_jobs.clear();
+
+    // Emit a signal that jobs have been cleared
+    ArgumentPack args;
+    args.add<size_t>(oldSize);
+    emitString("log", "Cleared " + std::to_string(oldSize) + " jobs");
 }

@@ -1,36 +1,27 @@
-#include <random>
-#include <thread>
 #include <iomanip>
-#include <task/ParallelAlgorithm.h>
+#include <random>
 #include <task/Chronometer.h>
 #include <task/Logger.h>
+#include <task/ParallelAlgorithm.h>
+#include <thread>
 
 // Structure pour les paramètres de chaque job
-struct PiJobParams
-{
+struct PiJobParams {
     size_t points; // Nombre de points à calculer par ce job
     int seed;      // Seed pour le générateur aléatoire
 };
 
-class PiCalculator : public ParallelAlgorithm
-{
-public:
+class PiCalculator : public ParallelAlgorithm {
+  public:
     PiCalculator(size_t totalPoints = 1000000)
-        : m_totalPoints(totalPoints), m_result(0.0)
-    {
-    }
+        : m_totalPoints(totalPoints), m_result(0.0) {}
 
-    double getResult() const
-    {
-        return m_result;
-    }
+    double getResult() const { return m_result; }
 
-protected:
+  protected:
     // Implémentation du job individuel
-    void doJob(const std::any &job) override
-    {
-        try
-        {
+    void doJob(const std::any &job) override {
+        try {
             const auto &params = std::any_cast<PiJobParams>(job);
             double localSum = calculatePiPortion(params);
 
@@ -41,22 +32,27 @@ protected:
 
                 // Émission du progrès
                 m_completedPoints += params.points;
-                double progress = (static_cast<double>(m_completedPoints) / m_totalPoints) * 100;
+                double progress =
+                    (static_cast<double>(m_completedPoints) / m_totalPoints) *
+                    100;
 
-                emit("log", Args{
-                                std::string("Progress: ") +
-                                std::to_string(static_cast<int>(progress)) + "%"});
+                // Create ArgumentPack instead of Args
+                ArgumentPack args;
+                args.add<std::string>(
+                    "Progress: " + std::to_string(static_cast<int>(progress)) +
+                    "%");
+                emit("log", args);
             }
-        }
-        catch (const std::bad_any_cast &e)
-        {
-            emit("error", Args{
-                              std::string("Invalid job format: ") + e.what()});
+        } catch (const std::bad_any_cast &e) {
+            // Create ArgumentPack instead of Args
+            ArgumentPack args;
+            args.add<std::string>("Invalid job format: " +
+                                  std::string(e.what()));
+            emit("error", args);
         }
     }
 
-    void exec(const Args &args = {}) override
-    {
+    void exec(const ArgumentPack &args = {}) override {
         if (!m_isSetup) {
             setupJobs();
             m_isSetup = true;
@@ -71,33 +67,32 @@ protected:
         // Calcul final de pi
         m_result = m_result / static_cast<double>(m_totalPoints) * 4.0;
 
-        emit("log", Args{
-                        std::string("Final π value: ") +
-                        std::to_string(m_result)});
+        // Create ArgumentPack instead of Args
+        ArgumentPack logArgs;
+        logArgs.add<std::string>("Final π value: " + std::to_string(m_result));
+        emit("log", logArgs);
     }
 
-private:
-    double calculatePiPortion(const PiJobParams &params)
-    {
+  private:
+    double calculatePiPortion(const PiJobParams &params) {
         std::mt19937 gen(params.seed);
         std::uniform_real_distribution<> dis(-1.0, 1.0);
 
         size_t insideCircle = 0;
 
-        for (size_t i = 0; i < params.points; ++i)
-        {
-            if (stopRequested())
-            {
-                emit("warn", Args{
-                                 std::string("Calculation stopped by user")});
+        for (size_t i = 0; i < params.points; ++i) {
+            if (stopRequested()) {
+                // Create ArgumentPack instead of Args
+                ArgumentPack args;
+                args.add<std::string>("Calculation stopped by user");
+                emit("warn", args);
                 return 0.0;
             }
 
             double x = dis(gen);
             double y = dis(gen);
 
-            if (x * x + y * y <= 1.0)
-            {
+            if (x * x + y * y <= 1.0) {
                 ++insideCircle;
             }
         }
@@ -105,18 +100,18 @@ private:
         return static_cast<double>(insideCircle);
     }
 
-    void setupJobs()
-    {
+    void setupJobs() {
         // Détermine le nombre de jobs basé sur le nombre de cœurs disponibles
         size_t numCores = std::thread::hardware_concurrency();
         size_t pointsPerJob = m_totalPoints / numCores;
 
-        emit("log", Args{
-                        std::string("Using ") + std::to_string(numCores) + " cores"});
+        // Create ArgumentPack instead of Args
+        ArgumentPack args;
+        args.add<std::string>("Using " + std::to_string(numCores) + " cores");
+        emit("log", args);
 
         // Crée un job pour chaque cœur
-        for (size_t i = 0; i < numCores; ++i)
-        {
+        for (size_t i = 0; i < numCores; ++i) {
             PiJobParams params{
                 pointsPerJob,
                 static_cast<int>(i) // Utilise i comme seed
@@ -126,11 +121,8 @@ private:
 
         // Gère les points restants si la division n'est pas exacte
         size_t remainingPoints = m_totalPoints % numCores;
-        if (remainingPoints > 0)
-        {
-            PiJobParams params{
-                remainingPoints,
-                static_cast<int>(numCores)};
+        if (remainingPoints > 0) {
+            PiJobParams params{remainingPoints, static_cast<int>(numCores)};
             addJob(params);
         }
     }
@@ -143,10 +135,9 @@ private:
 };
 
 // Exemple d'utilisation
-int main()
-{
+int main() {
     // Création des composants
-    u_int64_t nbPts = 1e10 ;
+    u_int64_t nbPts = 1e10;
     auto logger = std::make_shared<Logger>("π:");
     auto chrono = std::make_shared<Chronometer>();
     auto piCalc = std::make_shared<PiCalculator>(nbPts); // 10 billion of points
@@ -155,9 +146,9 @@ int main()
     logger->connectAllSignalsTo(piCalc.get());
 
     // Configuration du chronomètre
-    piCalc->connect("started", [chrono]() { chrono->start(); });
-    piCalc->connect("finished", [chrono]() {
-        double elapsed = chrono->stop() / 1000.0;  // Conversion en secondes
+    piCalc->connectSimple("started", [chrono]() { chrono->start(); });
+    piCalc->connectSimple("finished", [chrono]() {
+        double elapsed = chrono->stop() / 1000.0; // Conversion en secondes
         std::cout << "Calculation took " << elapsed << " seconds" << std::endl;
     });
 
@@ -171,6 +162,7 @@ int main()
     future.wait();
 
     // Affichage du résultat avec une précision élevée
-    std::cout << std::setprecision(15) << "π ≈ " << piCalc->getResult() << std::endl;
+    std::cout << std::setprecision(15) << "π ≈ " << piCalc->getResult()
+              << std::endl;
     std::cout << "Real π = 3.141592653589793..." << std::endl;
 }

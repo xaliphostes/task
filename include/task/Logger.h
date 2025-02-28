@@ -23,26 +23,26 @@
 
 #pragma once
 #include "Task.h"
+#include <iostream>
 #include <string>
 #include <vector>
-#include <iostream>
 
 class Logger : public Task {
-public:
-    explicit Logger(const std::string& prefix = ">>") ;
+  public:
+    explicit Logger(const std::string &prefix = ">>");
     virtual ~Logger() = default;
 
-    void log(const Args& args) ;
-    void warn(const Args& args) ;
-    void error(const Args& args) ;
+    void log(const ArgumentPack &args);
+    void warn(const ArgumentPack &args);
+    void error(const ArgumentPack &args);
 
     // Méthode statique pour créer les signaux pour une tâche
-    static void createSignalsFor(Task* task) ;
+    static void createSignalsFor(Task *task);
 
     // Connecter tous les signaux à une tâche
-    void connectAllSignalsTo(Task* task) ;
-    void connectAllSignalsTo(const std::vector<Task*>& tasks) ;
+    void connectAllSignalsTo(Task *task);
+    void connectAllSignalsTo(const std::vector<Task *> &tasks);
 
-private:
+  private:
     std::string m_prefix;
 };

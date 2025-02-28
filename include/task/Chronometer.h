@@ -21,17 +21,18 @@
  *
  */
 
+#pragma once
 #include "Task.h"
 #include <chrono>
 #include <memory>
 
 class Chronometer : public Task {
-public:
-    Chronometer() ;
+  public:
+    Chronometer();
 
-    void start() ;
-    int64_t stop() ;
+    void start();
+    int64_t stop();
 
-private:
+  private:
     std::unique_ptr<std::chrono::system_clock::time_point> m_startTime;
 };

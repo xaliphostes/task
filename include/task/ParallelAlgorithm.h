@@ -25,9 +25,9 @@
 #include "FlowAlgorithm.h"
 
 class ParallelAlgorithm : public FlowAlgorithm {
-public:
-    ParallelAlgorithm() = default;
+  public:
+    ParallelAlgorithm();
     virtual ~ParallelAlgorithm() = default;
 
-    void exec(const Args& args = {}) override ;
+    void exec(const ArgumentPack &args = {}) override;
 };

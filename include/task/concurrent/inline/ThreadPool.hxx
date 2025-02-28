@@ -21,8 +21,15 @@
  *
  */
 
-#pragma once
-#include <vector>
-#include <any>
+// Template implementation for ThreadPool
 
-using Args = std::vector<std::any>;
+template <typename T, typename... Args>
+T *ThreadPool::createAndAdd(Args &&...args) {
+    static_assert(std::is_base_of<Runnable, T>::value,
+                  "T must be derived from Runnable");
+
+    auto runnable = std::make_unique<T>(std::forward<Args>(args)...);
+    T *ptr = runnable.get();
+    add(std::move(runnable));
+    return ptr;
+}

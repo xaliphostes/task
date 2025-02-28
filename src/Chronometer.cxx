@@ -23,20 +23,20 @@
 
 #include <task/Chronometer.h>
 
-Chronometer::Chronometer() : m_startTime(nullptr) {}
+Chronometer::Chronometer() : m_startTime(nullptr) {
+    // Create a data signal for timing information
+    createDataSignal("timing");
+}
 
-void Chronometer::start()
-{
+void Chronometer::start() {
     m_startTime = std::make_unique<std::chrono::system_clock::time_point>(
         std::chrono::system_clock::now());
     emit("started");
 }
 
-int64_t Chronometer::stop()
-{
-    if (!m_startTime)
-    {
-        emit("error", Args{std::string("Chronometer not started.")});
+int64_t Chronometer::stop() {
+    if (!m_startTime) {
+        emitString("error", "Chronometer not started.");
         return 0;
     }
 
@@ -45,7 +45,14 @@ int64_t Chronometer::stop()
                         now - *m_startTime)
                         .count();
 
-    emit("finished", Args{timeDiff});
+    // Create ArgumentPack with timing information
+    ArgumentPack timingArgs;
+    timingArgs.add<int64_t>(timeDiff);
+
+    // Emit both signals
+    emit("finished");
+    emit("timing", timingArgs);
+
     m_startTime.reset();
 
     return timeDiff;

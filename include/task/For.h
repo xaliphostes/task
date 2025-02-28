@@ -23,13 +23,11 @@
 
 #pragma once
 #include "Task.h"
-#include <optional>
-#include <map>
 #include <future>
+#include <optional>
 
 // Structure pour les paramètres de la boucle
-struct ForParameters
-{
+struct ForParameters {
     std::optional<int> start;
     std::optional<int> stop;
     std::optional<int> step;
@@ -38,28 +36,27 @@ struct ForParameters
     ForParameters(int start_, int stop_, int step_ = 1);
 };
 
-class For : public Task
-{
-public:
+class For : public Task {
+  public:
     For(const ForParameters &params = ForParameters());
 
     void set(const ForParameters &params = ForParameters());
 
-    int startValue() const ;
-    void setStartValue(int value) ;
+    int startValue() const;
+    void setStartValue(int value);
 
-    int stopValue() const ;
-    void setStopValue(int value) ;
+    int stopValue() const;
+    void setStopValue(int value);
 
-    int stepValue() const ;
-    void setStepValue(int value) ;
+    int stepValue() const;
+    void setStepValue(int value);
 
-    int getCurrentValue() const ;
+    int getCurrentValue() const;
 
     void start();
     std::future<void> startAsync();
 
-private:
+  private:
     int m_start;
     int m_stop;
     int m_step;

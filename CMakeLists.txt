@@ -27,23 +27,15 @@ set(CMAKE_CXX_EXTENSIONS on)
 
 set(DIST_DIR ${CMAKE_CURRENT_SOURCE_DIR}/bin)
 
-if(ENABLE_COVERAGE)
-  # set compiler flags
-  set(CMAKE_CXX_FLAGS "-O0 -coverage")
-
-  # find required tools
-  find_program(LCOV lcov REQUIRED)
-  find_program(GENHTML genhtml REQUIRED)
-
-  # add coverage target
-  add_custom_target(coverage
-    # gather data
-    COMMAND ${LCOV} --directory . --capture --output-file coverage.info
-    # generate report
-    # --ignore-errors inconsistent 
-    COMMAND ${GENHTML}--demangle-cpp -o coverage coverage.info
-    WORKING_DIRECTORY ${CMAKE_BINARY_DIR})
-endif()
+function (auto_discover_tests)
+    file(GLOB_RECURSE BASE_TEST_FILES "unitTest/*_test.cxx")
+    foreach(TEST_FILE ${BASE_TEST_FILES})
+        get_filename_component(TEST_NAME ${TEST_FILE} NAME_WE)
+        add_executable(${TEST_NAME} ${TEST_FILE})
+        target_link_libraries(${TEST_NAME} PRIVATE task-shared)
+        add_test(NAME ${TEST_NAME} COMMAND ${TEST_NAME})
+    endforeach() 
+endfunction()
 
 IF (WIN32)
     add_definitions( -TASK_EXPORTS=TRUE )
@@ -57,7 +49,9 @@ else()
 endif()
 
 include_directories(include)
-add_subdirectory(src)
+# add_subdirectory(src)
+file(GLOB_RECURSE SRC_task "${PROJECT_SOURCE_DIR}/src/*.cxx")
+add_library(task-shared SHARED ${SRC_task})
 
 set_target_properties(task-shared PROPERTIES OUTPUT_NAME Task)
 
@@ -67,7 +61,10 @@ set_target_properties(task-shared PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${DIST_DIR
 set_target_properties(task-shared PROPERTIES PDB_OUTPUT_DIRECTORY ${DIST_DIR})
 
 enable_testing()
-add_subdirectory(unitTest)
+auto_discover_tests()
+
+add_subdirectory(examples/concurrent)
+add_subdirectory(examples/counter)
+add_subdirectory(examples/parallel)
 add_subdirectory(examples/pi-1)
 add_subdirectory(examples/pi-2)
-add_subdirectory(examples/signal)

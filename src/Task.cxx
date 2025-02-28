@@ -24,9 +24,12 @@
 #include <task/Task.h>
 
 Task::Task() {
-    createSignal("started");
-    createSignal("finished");
-    createSignal("log");
-    createSignal("warn");
-    createSignal("error");
+    // Create simple notification signals (no arguments)
+    createSimpleSignal("started");
+    createSimpleSignal("finished");
+
+    // Create data signals (with ArgumentPack)
+    createDataSignal("log");
+    createDataSignal("warn");
+    createDataSignal("error");
 }

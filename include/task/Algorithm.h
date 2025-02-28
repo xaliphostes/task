@@ -23,33 +23,30 @@
 
 #pragma once
 #include "Task.h"
-#include <vector>
 #include <future>
-#include <any>
 
-class Algorithm : public Task
-{
-public:
+// A simple algorithm that demonstrates the signal-slot system
+class Algorithm : public Task {
+  public:
     Algorithm();
     virtual ~Algorithm() = default;
 
-    virtual void exec(const Args &args = {}) = 0;
-
+    virtual void exec(const ArgumentPack &args = {}) = 0;
     bool stopRequested() const;
     void stop();
     bool isRunning() const;
     bool isDirty() const;
-
     void setDirty(bool dirty);
+    void reportProgress(float progress);
+    std::future<void> run(const ArgumentPack &args = {});
 
-    // Asynchrone version of run
-    std::future<void> run(const Args &args = {});
+  protected:
+    void runImpl(const ArgumentPack &args);
 
-protected:
-    void runImpl(const Args &args = {});
-
-private:
+  private:
     bool m_dirty;
     bool m_stopRequested;
     bool m_isRunning;
 };
+
+#include "inline/Algorithm.hxx"

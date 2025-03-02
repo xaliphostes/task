@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Task - Task Framework Documentation</title>
+    <style>
+        :root {
+            --primary-color: #4a6da7;
+            --secondary-color: #5e81ac;
+            --accent-color: #88c0d0;
+            --text-color: #2e3440;
+            --text-light: #4c566a;
+            --bg-color: #eceff4;
+            --bg-accent: #e5e9f0;
+            --success-color: #a3be8c;
+            --warning-color: #ebcb8b;
+            --error-color: #bf616a;
+            --code-bg: #f8f9fb;
+            --border-color: #d8dee9;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: var(--text-color);
+            background-color: var(--bg-color);
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 30px;
+        }
+
+        h1,
+        h2,
+        h3,
+        h4 {
+            color: var(--primary-color);
+            margin: 1.5rem 0 1rem 0;
+        }
+
+        h1 {
+            font-size: 2.2rem;
+            margin-top: 0;
+            padding-bottom: 10px;
+            border-bottom: 2px solid var(--accent-color);
+        }
+
+        h2 {
+            font-size: 1.8rem;
+        }
+
+        h3 {
+            font-size: 1.3rem;
+            color: var(--secondary-color);
+        }
+
+        h4 {
+            font-size: 1.1rem;
+            color: var(--text-light);
+        }
+
+        p {
+            margin-bottom: 1rem;
+        }
+
+        a {
+            color: var(--primary-color);
+            text-decoration: none;
+        }
+
+        a:hover {
+            text-decoration: underline;
+        }
+
+        .feature-list {
+            margin-left: 20px;
+            margin-bottom: 20px;
+        }
+
+        .feature-list li {
+            margin-bottom: 8px;
+        }
+
+        code {
+            font-family: 'Consolas', 'Monaco', monospace;
+            background-color: var(--code-bg);
+            padding: 2px 4px;
+            border-radius: 3px;
+            font-size: 0.9em;
+            color: var(--secondary-color);
+            border: 1px solid var(--border-color);
+        }
+
+        pre {
+            background-color: var(--code-bg);
+            padding: 15px;
+            border-radius: 5px;
+            overflow-x: auto;
+            margin: 15px 0;
+            border: 1px solid var(--border-color);
+        }
+
+        pre code {
+            background-color: transparent;
+            padding: 0;
+            border: none;
+            font-size: 0.9rem;
+            line-height: 1.5;
+        }
+
+        .table-container {
+            overflow-x: auto;
+            margin: 20px 0;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 1rem;
+        }
+
+        th,
+        td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        thead {
+            background-color: var(--bg-accent);
+        }
+
+        th {
+            font-weight: 600;
+            color: var(--text-light);
+        }
+
+        tr:nth-child(even) {
+            background-color: rgba(229, 233, 240, 0.5);
+        }
+
+        .card {
+            background-color: white;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+            border: 1px solid var(--border-color);
+        }
+
+        .note {
+            background-color: rgba(136, 192, 208, 0.2);
+            border-left: 4px solid var(--accent-color);
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 0 5px 5px 0;
+        }
+
+        .warning {
+            background-color: rgba(235, 203, 139, 0.2);
+            border-left: 4px solid var(--warning-color);
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 0 5px 5px 0;
+        }
+
+        .example-header {
+            background-color: var(--secondary-color);
+            color: white;
+            padding: 10px 15px;
+            border-radius: 5px 5px 0 0;
+            font-weight: 500;
+        }
+
+        .example-content {
+            background-color: var(--code-bg);
+            padding: 15px;
+            border-radius: 0 0 5px 5px;
+            border: 1px solid var(--border-color);
+            border-top: none;
+            margin-bottom: 20px;
+        }
+
+        .section {
+            margin-bottom: 40px;
+        }
+
+        .signal-type {
+            display: inline-block;
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-size: 0.8rem;
+            font-weight: 500;
+            margin-left: 8px;
+            background-color: var(--bg-accent);
+        }
+
+        .signal-type.simple {
+            background-color: rgba(163, 190, 140, 0.3);
+            color: #3b8365;
+        }
+
+        .signal-type.data {
+            background-color: rgba(136, 192, 208, 0.3);
+            color: #3a7b91;
+        }
+
+        .back-link {
+            display: inline-block;
+            margin-bottom: 15px;
+            font-size: 0.9rem;
+        }
+
+        .back-link:before {
+            content: "←";
+            margin-right: 5px;
+        }
+
+        .inheritance {
+            font-style: italic;
+            margin-bottom: 15px;
+            color: var(--text-light);
+        }
+
+        .toc {
+            background-color: var(--bg-accent);
+            border-radius: 5px;
+            padding: 15px;
+            margin-bottom: 30px;
+        }
+
+        .toc h4 {
+            margin-top: 0;
+            margin-bottom: 10px;
+        }
+
+        .toc ul {
+            list-style-type: none;
+            margin-left: 10px;
+        }
+
+        .toc li {
+            margin-bottom: 5px;
+        }
+
+        .toc a {
+            display: inline-block;
+            padding: 2px 0;
+        }
+    </style>
+</head>
+
+<body>
+    <a href="index.html" class="back-link">Back to Index</a>
+
+    <section class="section">
+        <h1>Task</h1>
+        <p class="inheritance">Inherits from: <a href="signalslot.html">SignalSlot</a></p>
+
+        <div class="toc">
+            <h4>Contents</h4>
+            <ul>
+                <li><a href="#overview">Overview</a></li>
+                <li><a href="#interface">Class Interface</a></li>
+                <li><a href="#signals">Standard Signals</a></li>
+                <li><a href="#implementation">Implementation</a></li>
+                <li><a href="#usage">Usage</a></li>
+                <li><a href="#extensions">Extensions</a></li>
+            </ul>
+        </div>
+
+        <div id="overview" class="card">
+            <p>The <code>Task</code> class serves as the foundation for all task components in the framework. It
+                inherits from <code>SignalSlot</code> to provide signal/slot communication capabilities and establishes
+                common signals for task lifecycle events. This class provides a consistent foundation that all
+                specialized task types build upon.</p>
+        </div>
+
+        <h2 id="interface">Class Interface</h2>
+        <pre><code>class Task : public SignalSlot {
+public:
+    Task();
+    virtual ~Task() = default;
+};</code></pre>
+
+        <p>While the interface is minimal, the <code>Task</code> class establishes the crucial foundation of common
+            signals that create a consistent communication pattern across the framework.</p>
+
+        <h2 id="signals">Standard Signals</h2>
+        <p>The Task class automatically creates these standard signals during construction:</p>
+
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Signal</th>
+                        <th>Type</th>
+                        <th>Description</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>started <span class="signal-type simple">simple</span></td>
+                        <td>Simple</td>
+                        <td>Emitted when the task begins execution</td>
+                    </tr>
+                    <tr>
+                        <td>finished <span class="signal-type simple">simple</span></td>
+                        <td>Simple</td>
+                        <td>Emitted when the task completes execution</td>
+                    </tr>
+                    <tr>
+                        <td>log <span class="signal-type data">data</span></td>
+                        <td>Data</td>
+                        <td>Emitted with informational log messages</td>
+                    </tr>
+                    <tr>
+                        <td>warn <span class="signal-type data">data</span></td>
+                        <td>Data</td>
+                        <td>Emitted with warning messages</td>
+                    </tr>
+                    <tr>
+                        <td>error <span class="signal-type data">data</span></td>
+                        <td>Data</td>
+                        <td>Emitted with error messages</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <h2 id="implementation">Implementation</h2>
+        <p>Here's how the Task class is implemented:</p>
+
+        <pre><code>Task::Task() {
+    // Create simple notification signals (no arguments)
+    createSimpleSignal("started");
+    createSimpleSignal("finished");
+
+    // Create data signals (with ArgumentPack)
+    createDataSignal("log");
+    createDataSignal("warn");
+    createDataSignal("error");
+}</code></pre>
+
+        <div class="note">
+            <strong>Note:</strong> While the implementation is simple, it establishes a consistent communication pattern
+            that all task-based components follow. This consistency is key to the framework's design.
+        </div>
+
+        <h2 id="usage">Usage</h2>
+        <p>The <code>Task</code> class is primarily used as a base class. Here's a simple example of a class deriving
+            from Task:</p>
+
+        <div class="example-header">Basic Task Subclass</div>
+        <pre class="example-content"><code>class CustomTask : public Task {
+public:
+    CustomTask(const std::string& name) : m_name(name) {
+        // Create additional signals if needed
+        createDataSignal("result");
+    }
+    
+    void start() {
+        // Signal that we're starting
+        emit("started");
+        
+        try {
+            // Perform task work
+            emitString("log", m_name + " is executing");
+            
+            // Create a result
+            ArgumentPack resultArgs;
+            resultArgs.add<std::string>("Operation completed");
+            resultArgs.add<int>(42);
+            emit("result", resultArgs);
+            
+            // Signal completion
+            emit("finished");
+        } catch (const std::exception& e) {
+            // Report error
+            emitString("error", m_name + " failed: " + e.what());
+        }
+    }
+    
+private:
+    std::string m_name;
+};</code></pre>
+
+        <div class="example-header">Using a Task</div>
+        <pre class="example-content"><code>// Create the task
+auto task = std::make_shared<CustomTask>("MyTask");
+
+// Connect to standard Task signals
+task->connectSimple("started", []() {
+    std::cout << "Task started" << std::endl;
+});
+
+task->connectSimple("finished", []() {
+    std::cout << "Task finished" << std::endl;
+});
+
+task->connectData("log", [](const ArgumentPack& args) {
+    std::string message = args.get<std::string>(0);
+    std::cout << "LOG: " << message << std::endl;
+});
+
+task->connectData("error", [](const ArgumentPack& args) {
+    std::string message = args.get<std::string>(0);
+    std::cerr << "ERROR: " << message << std::endl;
+});
+
+// Connect to custom signals
+task->connectData("result", [](const ArgumentPack& args) {
+    std::string status = args.get<std::string>(0);
+    int value = args.get<int>(1);
+    std::cout << "Result: " << status << ", value=" << value << std::endl;
+});
+
+// Execute the task
+task->start();</code></pre>
+
+        <h2 id="extensions">Extensions</h2>
+        <p>The <code>Task</code> class is extended by several specialized classes in the framework:</p>
+
+        <ul class="feature-list">
+            <li><strong><a href="algorithm.html">Algorithm</a>:</strong> Extends Task with execution control and
+                progress reporting</li>
+            <li><strong><a href="runnable.html">Runnable</a>:</strong> Adds standardized execution interface for tasks
+            </li>
+            <li><strong><a href="chronometer.html">Chronometer</a>:</strong> Implements precise time measurement</li>
+            <li><strong><a href="counter.html">Counter</a>:</strong> Provides a signal-emitting numeric counter</li>
+            <li><strong><a href="for.html">For</a>:</strong> Implements a loop controller with signals</li>
+            <li><strong><a href="logger.html">Logger</a>:</strong> Specializes in handling and formatting log messages
+            </li>
+        </ul>
+
+        <div class="note">
+            <strong>Best Practice:</strong> When creating a new component that needs to communicate with other parts of
+            the system, consider deriving from <code>Task</code> rather than directly from <code>SignalSlot</code> to
+            ensure consistent signal patterns.
+        </div>
+    </section>
+</body>
+
+</html>

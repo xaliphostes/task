@@ -1,0 +1,556 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FlowAlgorithm - Task Framework Documentation</title>
+    <style>
+        :root {
+            --primary-color: #4a6da7;
+            --secondary-color: #5e81ac;
+            --accent-color: #88c0d0;
+            --text-color: #2e3440;
+            --text-light: #4c566a;
+            --bg-color: #eceff4;
+            --bg-accent: #e5e9f0;
+            --success-color: #a3be8c;
+            --warning-color: #ebcb8b;
+            --error-color: #bf616a;
+            --code-bg: #f8f9fb;
+            --border-color: #d8dee9;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: var(--text-color);
+            background-color: var(--bg-color);
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 30px;
+        }
+
+        h1, h2, h3, h4 {
+            color: var(--primary-color);
+            margin: 1.5rem 0 1rem 0;
+        }
+
+        h1 {
+            font-size: 2.2rem;
+            margin-top: 0;
+            padding-bottom: 10px;
+            border-bottom: 2px solid var(--accent-color);
+        }
+
+        h2 {
+            font-size: 1.8rem;
+        }
+
+        h3 {
+            font-size: 1.3rem;
+            color: var(--secondary-color);
+        }
+
+        h4 {
+            font-size: 1.1rem;
+            color: var(--text-light);
+        }
+
+        p {
+            margin-bottom: 1rem;
+        }
+
+        a {
+            color: var(--primary-color);
+            text-decoration: none;
+        }
+
+        a:hover {
+            text-decoration: underline;
+        }
+
+        .feature-list {
+            margin-left: 20px;
+            margin-bottom: 20px;
+        }
+
+        .feature-list li {
+            margin-bottom: 8px;
+        }
+
+        code {
+            font-family: 'Consolas', 'Monaco', monospace;
+            background-color: var(--code-bg);
+            padding: 2px 4px;
+            border-radius: 3px;
+            font-size: 0.9em;
+            color: var(--secondary-color);
+            border: 1px solid var(--border-color);
+        }
+
+        pre {
+            background-color: var(--code-bg);
+            padding: 15px;
+            border-radius: 5px;
+            overflow-x: auto;
+            margin: 15px 0;
+            border: 1px solid var(--border-color);
+        }
+
+        pre code {
+            background-color: transparent;
+            padding: 0;
+            border: none;
+            font-size: 0.9rem;
+            line-height: 1.5;
+        }
+
+        .table-container {
+            overflow-x: auto;
+            margin: 20px 0;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 1rem;
+        }
+
+        th, td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        thead {
+            background-color: var(--bg-accent);
+        }
+
+        th {
+            font-weight: 600;
+            color: var(--text-light);
+        }
+
+        tr:nth-child(even) {
+            background-color: rgba(229, 233, 240, 0.5);
+        }
+
+        .card {
+            background-color: white;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+            border: 1px solid var(--border-color);
+        }
+
+        .note {
+            background-color: rgba(136, 192, 208, 0.2);
+            border-left: 4px solid var(--accent-color);
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 0 5px 5px 0;
+        }
+
+        .warning {
+            background-color: rgba(235, 203, 139, 0.2);
+            border-left: 4px solid var(--warning-color);
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 0 5px 5px 0;
+        }
+
+        .example-header {
+            background-color: var(--secondary-color);
+            color: white;
+            padding: 10px 15px;
+            border-radius: 5px 5px 0 0;
+            font-weight: 500;
+        }
+
+        .example-content {
+            background-color: var(--code-bg);
+            padding: 15px;
+            border-radius: 0 0 5px 5px;
+            border: 1px solid var(--border-color);
+            border-top: none;
+            margin-bottom: 20px;
+        }
+
+        .section {
+            margin-bottom: 40px;
+        }
+
+        .signal-type {
+            display: inline-block;
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-size: 0.8rem;
+            font-weight: 500;
+            margin-left: 8px;
+            background-color: var(--bg-accent);
+        }
+
+        .signal-type.simple {
+            background-color: rgba(163, 190, 140, 0.3);
+            color: #3b8365;
+        }
+
+        .signal-type.data {
+            background-color: rgba(136, 192, 208, 0.3);
+            color: #3a7b91;
+        }
+
+        .back-link {
+            display: inline-block;
+            margin-bottom: 15px;
+            font-size: 0.9rem;
+        }
+
+        .back-link:before {
+            content: "←";
+            margin-right: 5px;
+        }
+
+        .inheritance {
+            font-style: italic;
+            margin-bottom: 15px;
+            color: var(--text-light);
+        }
+
+        .toc {
+            background-color: var(--bg-accent);
+            border-radius: 5px;
+            padding: 15px;
+            margin-bottom: 30px;
+        }
+
+        .toc h4 {
+            margin-top: 0;
+            margin-bottom: 10px;
+        }
+
+        .toc ul {
+            list-style-type: none;
+            margin-left: 10px;
+        }
+
+        .toc li {
+            margin-bottom: 5px;
+        }
+
+        .toc a {
+            display: inline-block;
+            padding: 2px 0;
+        }
+    </style>
+</head>
+<body>
+    <a href="index.html" class="back-link">Back to Index</a>
+    
+    <section class="section">
+        <h1>FlowAlgorithm</h1>
+        <p class="inheritance">Inherits from: <a href="algorithm.html">Algorithm</a></p>
+        
+        <div class="toc">
+            <h4>Contents</h4>
+            <ul>
+                <li><a href="#overview">Overview</a></li>
+                <li><a href="#features">Features</a></li>
+                <li><a href="#interface">Class Interface</a></li>
+                <li><a href="#signals">Signals</a></li>
+                <li><a href="#usage">Usage Example</a></li>
+                <li><a href="#job-management">Job Management</a></li>
+                <li><a href="#exec-implementation">Execution Implementation</a></li>
+                <li><a href="#best-practices">Best Practices</a></li>
+                <li><a href="#extensions">Extensions</a></li>
+            </ul>
+        </div>
+        
+        <div id="overview" class="card">
+            <p>The <code>FlowAlgorithm</code> class extends the <code>Algorithm</code> class to provide a framework for implementing algorithms that process a sequence of jobs. It serves as an intermediate layer in the algorithm hierarchy that adds job management capabilities while maintaining the execution control, signaling, and progress reporting features of the base <code>Algorithm</code> class.</p>
+        </div>
+        
+        <h2 id="features">Features</h2>
+        <ul class="feature-list">
+            <li><strong>Job Management:</strong> Methods for adding and clearing jobs to be processed</li>
+            <li><strong>Job Abstraction:</strong> Support for arbitrary job types through <code>std::any</code></li>
+            <li><strong>Customizable Job Processing:</strong> Abstract method for job-specific processing</li>
+            <li><strong>Sequential or Parallel Execution:</strong> Base for both sequential and parallel job processing algorithms</li>
+            <li><strong>Signal-Based Communication:</strong> Inherited signals for algorithm lifecycle events</li>
+            <li><strong>Progress Reporting:</strong> Built-in mechanism for reporting execution progress</li>
+            <li><strong>Cancellation Support:</strong> Ability to request and detect stop requests during job execution</li>
+        </ul>
+        
+        <h2 id="interface">Class Interface</h2>
+        <pre><code>class FlowAlgorithm : public Algorithm {
+public:
+    // Constructor & destructor
+    FlowAlgorithm() = default;
+    virtual ~FlowAlgorithm() = default;
+    
+    // Job management
+    void addJob(const std::any &job);
+    void clearJobs();
+    
+    // Core job processing method (must be implemented by subclasses)
+    virtual void doJob(const std::any &job) = 0;
+    
+protected:
+    // Job storage
+    std::vector<std::any> m_jobs;
+};</code></pre>
+        
+        <h2 id="signals">Signals</h2>
+        <p>FlowAlgorithm inherits and emits the following signals:</p>
+        
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Signal</th>
+                        <th>Type</th>
+                        <th>Description</th>
+                        <th>Arguments</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>progress <span class="signal-type data">data</span></td>
+                        <td>Data</td>
+                        <td>Reports execution progress</td>
+                        <td>float (0.0 to 1.0)</td>
+                    </tr>
+                    <tr>
+                        <td>started <span class="signal-type simple">simple</span></td>
+                        <td>Simple</td>
+                        <td>Indicates algorithm has started execution</td>
+                        <td>None</td>
+                    </tr>
+                    <tr>
+                        <td>finished <span class="signal-type simple">simple</span></td>
+                        <td>Simple</td>
+                        <td>Indicates algorithm has completed execution</td>
+                        <td>None</td>
+                    </tr>
+                    <tr>
+                        <td>error <span class="signal-type data">data</span></td>
+                        <td>Data</td>
+                        <td>Reports execution errors</td>
+                        <td>std::string (error message)</td>
+                    </tr>
+                    <tr>
+                        <td>log <span class="signal-type data">data</span></td>
+                        <td>Data</td>
+                        <td>Reports job management operations</td>
+                        <td>std::string (log message)</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        
+        <h2 id="usage">Usage Example</h2>
+        <div class="example-header">FlowAlgorithm Implementation Example</div>
+        <pre class="example-content"><code>// Create a custom flow algorithm by extending the FlowAlgorithm class
+class TextProcessor : public FlowAlgorithm {
+public:
+    // Constructor adds custom signals
+    TextProcessor() {
+        createDataSignal("file_processed");
+    }
+    
+    // Implement the required exec method to process all jobs
+    void exec(const ArgumentPack& args = {}) override {
+        if (m_jobs.empty()) {
+            emitString("log", "No text files to process");
+            return;
+        }
+        
+        emit("started");
+        
+        size_t totalJobs = m_jobs.size();
+        for (size_t i = 0; i < totalJobs; ++i) {
+            // Check for cancellation
+            if (stopRequested()) {
+                emitString("warn", "Processing stopped by user");
+                return;
+            }
+            
+            // Process this job
+            try {
+                doJob(m_jobs[i]);
+            } catch (const std::exception& e) {
+                emitString("error", std::string("Error processing job: ") + e.what());
+            }
+            
+            // Report progress
+            float progress = static_cast<float>(i + 1) / totalJobs;
+            reportProgress(progress);
+        }
+        
+        emitString("log", "Text processing completed");
+        emit("finished");
+    }
+    
+    // Implement the required doJob method to process individual jobs
+    void doJob(const std::any& job) override {
+        try {
+            // Try to cast the job to the expected type
+            auto filename = std::any_cast<std::string>(job);
+            
+            // Process the text file
+            emitString("log", "Processing file: " + filename);
+            
+            // File processing logic here...
+            int wordCount = 0; // Calculated from file processing
+            
+            // Create result for this job
+            ArgumentPack resultArgs;
+            resultArgs.add<std::string>(filename);
+            resultArgs.add<int>(wordCount);
+            emit("file_processed", resultArgs);
+        } catch (const std::bad_any_cast& e) {
+            throw std::runtime_error("Invalid job type: expected string filename");
+        }
+    }
+};</code></pre>
+        
+        <div class="example-header">Using the FlowAlgorithm</div>
+        <pre class="example-content"><code>// Using the flow algorithm
+void processTextFiles() {
+    // Create the algorithm
+    auto processor = std::make_shared<TextProcessor>();
+    
+    // Add jobs to process
+    processor->addJob(std::string("file1.txt"));
+    processor->addJob(std::string("file2.txt"));
+    processor->addJob(std::string("file3.txt"));
+    
+    // Connect to signals
+    processor->connectData("file_processed", [](const ArgumentPack& args) {
+        std::string filename = args.get<std::string>(0);
+        int wordCount = args.get<int>(1);
+        
+        std::cout << "Processed " << filename << ": " 
+                  << wordCount << " words" << std::endl;
+    });
+    
+    processor->connectData("progress", [](const ArgumentPack& args) {
+        float progress = args.get<float>(0);
+        std::cout << "Progress: " << (progress * 100) << "%" << std::endl;
+    });
+    
+    // Execute asynchronously
+    auto future = processor->run();
+    
+    // Wait for completion if needed
+    future.wait();
+}</code></pre>
+        
+        <h2 id="job-management">Job Management</h2>
+        <p>The FlowAlgorithm class maintains a vector of <code>std::any</code> objects that represent the jobs to be processed:</p>
+        
+        <ul class="feature-list">
+            <li><code>addJob(const std::any& job)</code>: Adds a new job to the collection</li>
+            <li><code>clearJobs()</code>: Removes all jobs from the collection</li>
+            <li><code>doJob(const std::any& job)</code>: Abstract method that must be implemented by subclasses to process a single job</li>
+        </ul>
+        
+        <div class="note">
+            <strong>Note:</strong> The use of <code>std::any</code> allows for flexibility in job types, but requires careful type checking in the <code>doJob()</code> implementation.
+        </div>
+        
+        <div class="example-header">Job Management Implementation</div>
+        <pre class="example-content"><code>void FlowAlgorithm::addJob(const std::any &job) {
+    m_jobs.push_back(job);
+
+    // Emit a signal to indicate job has been added
+    ArgumentPack args;
+    args.add<size_t>(m_jobs.size());
+    emitString("log",
+               "Job added. Total jobs: " + std::to_string(m_jobs.size()));
+}
+
+void FlowAlgorithm::clearJobs() {
+    size_t oldSize = m_jobs.size();
+    m_jobs.clear();
+
+    // Emit a signal that jobs have been cleared
+    ArgumentPack args;
+    args.add<size_t>(oldSize);
+    emitString("log", "Cleared " + std::to_string(oldSize) + " jobs");
+}</code></pre>
+        
+        <h2 id="exec-implementation">Execution Implementation</h2>
+        <p>FlowAlgorithm itself doesn't implement the <code>exec()</code> method, leaving it to subclasses to define how jobs are processed:</p>
+        
+        <ul class="feature-list">
+            <li><strong>Sequential Processing:</strong> Jobs can be processed one after another</li>
+            <li><strong>Parallel Processing:</strong> Jobs can be processed concurrently</li>
+            <li><strong>Custom Strategies:</strong> Subclasses can implement custom job execution strategies</li>
+        </ul>
+        
+        <div class="example-header">Sequential Processing Example</div>
+        <pre class="example-content"><code>void SequentialAlgorithm::exec(const ArgumentPack& args) {
+    if (m_jobs.empty()) {
+        emitString("log", "No jobs to execute");
+        return;
+    }
+    
+    emit("started");
+    
+    // Process jobs sequentially
+    size_t jobCount = m_jobs.size();
+    for (size_t i = 0; i < jobCount; ++i) {
+        // Check for stop request
+        if (stopRequested()) {
+            emitString("warn", "Processing stopped by user request");
+            break;
+        }
+        
+        // Process current job
+        try {
+            doJob(m_jobs[i]);
+        } catch (const std::exception& e) {
+            emitString("error", "Job failed: " + std::string(e.what()));
+        }
+        
+        // Report progress
+        reportProgress(static_cast<float>(i + 1) / jobCount);
+    }
+    
+    emit("finished");
+}</code></pre>
+        
+        <h2 id="best-practices">Best Practices</h2>
+        <ul class="feature-list">
+            <li><strong>Type Safety:</strong> Use careful type checking in <code>doJob()</code> to handle the <code>std::any</code> job objects safely</li>
+            <li><strong>Job Granularity:</strong> Design jobs to be self-contained units of work with appropriate granularity</li>
+            <li><strong>Progress Reporting:</strong> Report progress based on job completion rather than sub-job steps</li>
+            <li><strong>Error Handling:</strong> Use try-catch blocks around individual job processing to prevent one job failure from stopping the entire algorithm</li>
+            <li><strong>Cancellation Support:</strong> Check <code>stopRequested()</code> between jobs to allow for clean cancellation</li>
+            <li><strong>Standard Signals:</strong> Use the inherited signals consistently for proper integration with other components</li>
+        </ul>
+        
+        <h2 id="extensions">Extensions</h2>
+        <p>FlowAlgorithm serves as the base for several specialized algorithm classes:</p>
+        
+        <ul class="feature-list">
+            <li><strong><a href="parallelalgorithm.html">ParallelAlgorithm</a>:</strong> Processes jobs concurrently using multiple threads</li>
+            <li><strong>SequentialAlgorithm:</strong> Processes jobs one after another in sequence</li>
+            <li><strong>PrioritizedAlgorithm:</strong> Processes jobs according to a priority order</li>
+            <li><strong>BatchAlgorithm:</strong> Processes jobs in batches rather than individually</li>
+        </ul>
+        
+        <div class="note">
+            <strong>Note:</strong> When implementing a job processing algorithm, consider whether <a href="parallelalgorithm.html">ParallelAlgorithm</a> might meet your needs before creating a custom implementation.
+        </div>
+    </section>
+</body>
+</html>

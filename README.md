@@ -36,8 +36,10 @@ or
 make test
 ```
 
-# [Documentation](docs/index.md)
-(in markdown format)
+# [Documentation in markdown](docs/index.md)
+
+# [Documentation in html](docs/html/index.html)
+
 
 # Custom Algorithm Example
 This example demonstrates a comprehensive sensor data processing pipeline that leverages all the new features of this library.

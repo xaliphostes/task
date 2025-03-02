@@ -1,0 +1,627 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ParallelAlgorithm - Task Framework Documentation</title>
+    <style>
+        :root {
+            --primary-color: #4a6da7;
+            --secondary-color: #5e81ac;
+            --accent-color: #88c0d0;
+            --text-color: #2e3440;
+            --text-light: #4c566a;
+            --bg-color: #eceff4;
+            --bg-accent: #e5e9f0;
+            --success-color: #a3be8c;
+            --warning-color: #ebcb8b;
+            --error-color: #bf616a;
+            --code-bg: #f8f9fb;
+            --border-color: #d8dee9;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: var(--text-color);
+            background-color: var(--bg-color);
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 30px;
+        }
+
+        h1, h2, h3, h4 {
+            color: var(--primary-color);
+            margin: 1.5rem 0 1rem 0;
+        }
+
+        h1 {
+            font-size: 2.2rem;
+            margin-top: 0;
+            padding-bottom: 10px;
+            border-bottom: 2px solid var(--accent-color);
+        }
+
+        h2 {
+            font-size: 1.8rem;
+        }
+
+        h3 {
+            font-size: 1.3rem;
+            color: var(--secondary-color);
+        }
+
+        h4 {
+            font-size: 1.1rem;
+            color: var(--text-light);
+        }
+
+        p {
+            margin-bottom: 1rem;
+        }
+
+        a {
+            color: var(--primary-color);
+            text-decoration: none;
+        }
+
+        a:hover {
+            text-decoration: underline;
+        }
+
+        .feature-list {
+            margin-left: 20px;
+            margin-bottom: 20px;
+        }
+
+        .feature-list li {
+            margin-bottom: 8px;
+        }
+
+        code {
+            font-family: 'Consolas', 'Monaco', monospace;
+            background-color: var(--code-bg);
+            padding: 2px 4px;
+            border-radius: 3px;
+            font-size: 0.9em;
+            color: var(--secondary-color);
+            border: 1px solid var(--border-color);
+        }
+
+        pre {
+            background-color: var(--code-bg);
+            padding: 15px;
+            border-radius: 5px;
+            overflow-x: auto;
+            margin: 15px 0;
+            border: 1px solid var(--border-color);
+        }
+
+        pre code {
+            background-color: transparent;
+            padding: 0;
+            border: none;
+            font-size: 0.9rem;
+            line-height: 1.5;
+        }
+
+        .table-container {
+            overflow-x: auto;
+            margin: 20px 0;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 1rem;
+        }
+
+        th, td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        thead {
+            background-color: var(--bg-accent);
+        }
+
+        th {
+            font-weight: 600;
+            color: var(--text-light);
+        }
+
+        tr:nth-child(even) {
+            background-color: rgba(229, 233, 240, 0.5);
+        }
+
+        .card {
+            background-color: white;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+            border: 1px solid var(--border-color);
+        }
+
+        .note {
+            background-color: rgba(136, 192, 208, 0.2);
+            border-left: 4px solid var(--accent-color);
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 0 5px 5px 0;
+        }
+
+        .warning {
+            background-color: rgba(235, 203, 139, 0.2);
+            border-left: 4px solid var(--warning-color);
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 0 5px 5px 0;
+        }
+
+        .example-header {
+            background-color: var(--secondary-color);
+            color: white;
+            padding: 10px 15px;
+            border-radius: 5px 5px 0 0;
+            font-weight: 500;
+        }
+
+        .example-content {
+            background-color: var(--code-bg);
+            padding: 15px;
+            border-radius: 0 0 5px 5px;
+            border: 1px solid var(--border-color);
+            border-top: none;
+            margin-bottom: 20px;
+        }
+
+        .section {
+            margin-bottom: 40px;
+        }
+
+        .signal-type {
+            display: inline-block;
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-size: 0.8rem;
+            font-weight: 500;
+            margin-left: 8px;
+            background-color: var(--bg-accent);
+        }
+
+        .signal-type.simple {
+            background-color: rgba(163, 190, 140, 0.3);
+            color: #3b8365;
+        }
+
+        .signal-type.data {
+            background-color: rgba(136, 192, 208, 0.3);
+            color: #3a7b91;
+        }
+
+        .back-link {
+            display: inline-block;
+            margin-bottom: 15px;
+            font-size: 0.9rem;
+        }
+
+        .back-link:before {
+            content: "←";
+            margin-right: 5px;
+        }
+
+        .inheritance {
+            font-style: italic;
+            margin-bottom: 15px;
+            color: var(--text-light);
+        }
+
+        .toc {
+            background-color: var(--bg-accent);
+            border-radius: 5px;
+            padding: 15px;
+            margin-bottom: 30px;
+        }
+
+        .toc h4 {
+            margin-top: 0;
+            margin-bottom: 10px;
+        }
+
+        .toc ul {
+            list-style-type: none;
+            margin-left: 10px;
+        }
+
+        .toc li {
+            margin-bottom: 5px;
+        }
+
+        .toc a {
+            display: inline-block;
+            padding: 2px 0;
+        }
+    </style>
+</head>
+<body>
+    <a href="index.html" class="back-link">Back to Index</a>
+    
+    <section class="section">
+        <h1>ParallelAlgorithm</h1>
+        <p class="inheritance">Inherits from: <a href="flowalgorithm.html">FlowAlgorithm</a> → <a href="algorithm.html">Algorithm</a> → <a href="task.html">Task</a></p>
+        
+        <div class="toc">
+            <h4>Contents</h4>
+            <ul>
+                <li><a href="#overview">Overview</a></li>
+                <li><a href="#features">Features</a></li>
+                <li><a href="#interface">Class Interface</a></li>
+                <li><a href="#signals">Signals</a></li>
+                <li><a href="#usage">Usage Example</a></li>
+                <li><a href="#parallel-model">Parallel Execution Model</a></li>
+                <li><a href="#job-processing">Job Processing</a></li>
+                <li><a href="#cancellation">Cancellation Handling</a></li>
+                <li><a href="#error-handling">Error Handling</a></li>
+                <li><a href="#best-practices">Best Practices</a></li>
+            </ul>
+        </div>
+        
+        <div id="overview" class="card">
+            <p>The <code>ParallelAlgorithm</code> class extends the <code>FlowAlgorithm</code> class to provide a framework for executing multiple jobs concurrently. It implements the job execution strategy using C++ futures and asynchronous execution to process each job in a separate thread. This approach maximizes performance on multi-core systems while maintaining the signal-based communication and progress reporting features of the base classes.</p>
+        </div>
+        
+        <h2 id="features">Features</h2>
+        <ul class="feature-list">
+            <li><strong>Concurrent Job Execution:</strong> Processes multiple jobs simultaneously using separate threads</li>
+            <li><strong>Job-Level Progress Reporting:</strong> Reports progress based on completed job count</li>
+            <li><strong>Cancellation Support:</strong> Allows stopping execution with proper cleanup of running jobs</li>
+            <li><strong>Job-Specific Signals:</strong> Emits signals when individual jobs start and finish</li>
+            <li><strong>Comprehensive Error Handling:</strong> Captures and reports exceptions from individual jobs</li>
+            <li><strong>Flexible Job Types:</strong> Supports arbitrary job types through the <code>std::any</code> mechanism</li>
+            <li><strong>Thread Management:</strong> Handles thread coordination and synchronization internally</li>
+            <li><strong>Execution Control:</strong> Inherits execution control features from the Algorithm base class</li>
+        </ul>
+        
+        <h2 id="interface">Class Interface</h2>
+        <pre><code>class ParallelAlgorithm : public FlowAlgorithm {
+public:
+    // Constructor & destructor
+    ParallelAlgorithm();
+    virtual ~ParallelAlgorithm() = default;
+    
+    // Execute all jobs in parallel
+    void exec(const ArgumentPack &args = {}) override;
+    
+    // Inherited from FlowAlgorithm
+    virtual void doJob(const std::any &job) = 0; // Must be implemented by subclasses
+};</code></pre>
+        
+        <h2 id="signals">Signals</h2>
+        <p>ParallelAlgorithm emits the following signals:</p>
+        
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Signal</th>
+                        <th>Type</th>
+                        <th>Description</th>
+                        <th>Arguments</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>job_started <span class="signal-type data">data</span></td>
+                        <td>Data</td>
+                        <td>Emitted when a job starts processing</td>
+                        <td>job index (size_t)</td>
+                    </tr>
+                    <tr>
+                        <td>job_finished <span class="signal-type data">data</span></td>
+                        <td>Data</td>
+                        <td>Emitted when a job completes</td>
+                        <td>job index (size_t), success (bool)</td>
+                    </tr>
+                    <tr>
+                        <td>progress <span class="signal-type data">data</span></td>
+                        <td>Data</td>
+                        <td>Reports overall execution progress</td>
+                        <td>float (0.0 to 1.0)</td>
+                    </tr>
+                    <tr>
+                        <td>started <span class="signal-type simple">simple</span></td>
+                        <td>Simple</td>
+                        <td>Indicates algorithm has started execution</td>
+                        <td>None</td>
+                    </tr>
+                    <tr>
+                        <td>finished <span class="signal-type simple">simple</span></td>
+                        <td>Simple</td>
+                        <td>Indicates algorithm has completed all jobs</td>
+                        <td>None</td>
+                    </tr>
+                    <tr>
+                        <td>error <span class="signal-type data">data</span></td>
+                        <td>Data</td>
+                        <td>Reports errors during job execution</td>
+                        <td>std::string (error message)</td>
+                    </tr>
+                    <tr>
+                        <td>log <span class="signal-type data">data</span></td>
+                        <td>Data</td>
+                        <td>Reports execution status</td>
+                        <td>std::string (log message)</td>
+                    </tr>
+                    <tr>
+                        <td>warn <span class="signal-type data">data</span></td>
+                        <td>Data</td>
+                        <td>Reports warnings during execution</td>
+                        <td>std::string (warning message)</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        
+        <h2 id="usage">Usage Example</h2>
+        <div class="example-header">ParallelAlgorithm Implementation Example</div>
+        <pre class="example-content"><code>// Create a custom parallel algorithm by extending the ParallelAlgorithm class
+class ImageProcessor : public ParallelAlgorithm {
+public:
+    // Constructor registers additional signals if needed
+    ImageProcessor() {
+        createDataSignal("image_processed");
+    }
+    
+    // Implementation of the required doJob method for processing a single job
+    void doJob(const std::any& job) override {
+        try {
+            // Try to cast the job to the expected file path type
+            std::string imagePath = std::any_cast<std::string>(job);
+            
+            // Process the image
+            emitString("log", "Processing image: " + imagePath);
+            
+            // Simulate image processing
+            std::this_thread::sleep_for(std::chrono::milliseconds(200));
+            
+            // Image processing logic would go here...
+            ImageData result;
+            result.width = 1024;
+            result.height = 768;
+            result.path = imagePath;
+            
+            // Report successful processing
+            ArgumentPack resultArgs;
+            resultArgs.add<std::string>(imagePath);
+            resultArgs.add<ImageData>(result);
+            emit("image_processed", resultArgs);
+        } catch (const std::bad_any_cast& e) {
+            throw std::runtime_error("Invalid job type: expected string path");
+        } catch (const std::exception& e) {
+            throw std::runtime_error("Error processing image: " + std::string(e.what()));
+        }
+    }
+    
+private:
+    struct ImageData {
+        std::string path;
+        int width;
+        int height;
+    };
+};</code></pre>
+        
+        <div class="example-header">Using ParallelAlgorithm</div>
+        <pre class="example-content"><code>// Using the parallel algorithm
+void processImages() {
+    // Create the algorithm
+    auto processor = std::make_shared<ImageProcessor>();
+    
+    // Add jobs to process
+    processor->addJob(std::string("image1.jpg"));
+    processor->addJob(std::string("image2.jpg"));
+    processor->addJob(std::string("image3.jpg"));
+    processor->addJob(std::string("image4.jpg"));
+    processor->addJob(std::string("image5.jpg"));
+    
+    // Connect to signals
+    processor->connectData("image_processed", [](const ArgumentPack& args) {
+        std::string path = args.get<std::string>(0);
+        std::cout << "Processed image: " << path << std::endl;
+    });
+    
+    processor->connectData("progress", [](const ArgumentPack& args) {
+        float progress = args.get<float>(0);
+        std::cout << "Overall progress: " << (progress * 100) << "%" << std::endl;
+    });
+    
+    processor->connectData("job_started", [](const ArgumentPack& args) {
+        size_t jobIndex = args.get<size_t>(0);
+        std::cout << "Starting job " << jobIndex << std::endl;
+    });
+    
+    processor->connectData("job_finished", [](const ArgumentPack& args) {
+        size_t jobIndex = args.get<size_t>(0);
+        bool success = args.get<bool>(1);
+        std::cout << "Job " << jobIndex << (success ? " completed successfully" : " failed") << std::endl;
+    });
+    
+    processor->connectData("error", [](const ArgumentPack& args) {
+        std::string error = args.get<std::string>(0);
+        std::cerr << "ERROR: " << error << std::endl;
+    });
+    
+    // Execute asynchronously
+    auto future = processor->run();
+    
+    // Wait for completion if needed
+    future.wait();
+    
+    std::cout << "All images processed" << std::endl;
+}</code></pre>
+        
+        <h2 id="parallel-model">Parallel Execution Model</h2>
+        <p>The ParallelAlgorithm implements a parallel execution model:</p>
+        
+        <ol>
+            <li><strong>Job Preparation:</strong> Before execution starts, all jobs are prepared and validated</li>
+            <li><strong>Thread Creation:</strong> A separate thread is created for each job using <code>std::async</code></li>
+            <li><strong>Concurrent Execution:</strong> All jobs execute simultaneously on different threads</li>
+            <li><strong>Progress Tracking:</strong> Progress is reported as the percentage of completed jobs</li>
+            <li><strong>Result Collection:</strong> The algorithm waits for all threads to complete or be cancelled</li>
+            <li><strong>Cleanup:</strong> Resources are properly released even if execution is interrupted</li>
+        </ol>
+        
+        <p>The implementation uses <code>std::future&lt;void&gt;</code> to track job completion and handle exceptions.</p>
+        
+        <div class="example-header">Parallel Execution Implementation</div>
+        <pre class="example-content"><code>void ParallelAlgorithm::exec(const ArgumentPack &args) {
+    if (m_jobs.empty()) {
+        emitString("log", "No jobs to execute");
+        emit("finished");
+        return;
+    }
+
+    emit("started");
+    emitString("log", "Starting parallel execution of " +
+                          std::to_string(m_jobs.size()) + " jobs");
+
+    // Create futures for each job
+    std::vector<std::future<void>> futures;
+    futures.reserve(m_jobs.size());
+
+    // Launch each job in a separate thread
+    for (size_t i = 0; i < m_jobs.size(); ++i) {
+        const auto &job = m_jobs[i];
+        futures.push_back(std::async(std::launch::async, [this, job, i]() {
+            if (stopRequested()) {
+                ArgumentPack jobArgs;
+                jobArgs.add<size_t>(i);
+                emit("job_started", jobArgs);
+                emitString("warn", "Job " + std::to_string(i) +
+                                       " skipped due to stop request");
+                return;
+            }
+
+            try {
+                // Signal that job is starting
+                ArgumentPack startArgs;
+                startArgs.add<size_t>(i);
+                emit("job_started", startArgs);
+
+                // Execute the job
+                this->doJob(job);
+
+                // Signal that job is finished
+                ArgumentPack finishArgs;
+                finishArgs.add<size_t>(i);
+                finishArgs.add<bool>(true); // Success
+                emit("job_finished", finishArgs);
+
+                // Report progress
+                float progress = static_cast<float>(i + 1) /
+                                 static_cast<float>(m_jobs.size());
+                reportProgress(progress);
+
+            } catch (const std::exception &e) {
+                // Create an ArgumentPack for the error message
+                ArgumentPack errorArgs;
+                errorArgs.add<std::string>("Job " + std::to_string(i) +
+                                           " failed: " + e.what());
+                emit("error", errorArgs);
+
+                // Signal that job is finished with error
+                ArgumentPack finishArgs;
+                finishArgs.add<size_t>(i);
+                finishArgs.add<bool>(false); // Failure
+                emit("job_finished", finishArgs);
+            }
+        }));
+    }
+
+    // Wait for all jobs to complete
+    for (auto &future : futures) {
+        if (stopRequested()) {
+            emitString("warn", "Execution stopped by user request");
+            break;
+        }
+        future.wait();
+    }
+
+    // If we were requested to stop, some futures might still be running
+    if (stopRequested()) {
+        emitString("log", "Waiting for running jobs to complete...");
+
+        // We still need to wait for futures that might be running
+        for (auto &future : futures) {
+            future.wait();
+        }
+    }
+
+    emitString("log", "Parallel execution completed");
+    emit("finished");
+}</code></pre>
+        
+        <h2 id="job-processing">Job Processing</h2>
+        <p>The ParallelAlgorithm executes each job in the following sequence:</p>
+        
+        <ol>
+            <li><strong>Pre-Execution Check:</strong> Verify if execution should continue or has been stopped</li>
+            <li><strong>Job Start Signal:</strong> Emit <code>job_started</code> signal with the job index</li>
+            <li><strong>Job Execution:</strong> Call the <code>doJob()</code> method with the job data</li>
+            <li><strong>Job Completion Signal:</strong> Emit <code>job_finished</code> signal with success status</li>
+            <li><strong>Progress Update:</strong> Update and report overall progress based on completed job count</li>
+        </ol>
+        
+        <p>Each job is processed in its own thread, allowing for truly parallel execution.</p>
+        
+        <h2 id="cancellation">Cancellation Handling</h2>
+        <p>The ParallelAlgorithm supports cancellation through the <code>stopRequested()</code> mechanism:</p>
+        
+        <ol>
+            <li><strong>Cancellation Request:</strong> Client code calls <code>stop()</code> to request cancellation</li>
+            <li><strong>Cancellation Check:</strong> Jobs check <code>stopRequested()</code> before starting</li>
+            <li><strong>Graceful Shutdown:</strong> Already running jobs are allowed to complete</li>
+            <li><strong>Final Wait:</strong> Algorithm waits for all running jobs to finish before returning</li>
+        </ol>
+        
+        <p>This allows for responsive cancellation while ensuring clean resource handling.</p>
+        
+        <h2 id="error-handling">Error Handling</h2>
+        <p>Errors in individual jobs are handled carefully to prevent one job failure from affecting others:</p>
+        
+        <ol>
+            <li><strong>Exception Catching:</strong> Each job thread catches and reports exceptions</li>
+            <li><strong>Error Signal:</strong> Exceptions trigger an <code>error</code> signal with details</li>
+            <li><strong>Job Failure Signal:</strong> The <code>job_finished</code> signal includes success status (false for errors)</li>
+            <li><strong>Continued Execution:</strong> Other jobs continue executing despite individual failures</li>
+            <li><strong>Exception Propagation:</strong> Job exceptions don't propagate to the calling thread</li>
+        </ol>
+        
+        <p>This approach allows robust error handling while maintaining parallel execution.</p>
+        
+        <h2 id="best-practices">Best Practices</h2>
+        <ul class="feature-list">
+            <li><strong>Resource Management:</strong> Ensure resources are properly managed and released in the <code>doJob()</code> implementation</li>
+            <li><strong>Exception Safety:</strong> Use RAII techniques in job implementations to ensure exception safety</li>
+            <li><strong>Job Independence:</strong> Design jobs to be completely independent to maximize parallelism</li>
+            <li><strong>Load Balancing:</strong> Try to create jobs of similar computational complexity for optimal performance</li>
+            <li><strong>Cancellation Support:</strong> Implement cancellation checks in long-running jobs for better responsiveness</li>
+            <li><strong>Thread Safety:</strong> Ensure job implementations are thread-safe when accessing shared resources</li>
+            <li><strong>Signal Handling:</strong> Keep signal handlers lightweight to avoid blocking job threads</li>
+            <li><strong>Job Granularity:</strong> Choose an appropriate job size that balances parallelism with overhead</li>
+        </ul>
+        
+        <div class="note">
+            <strong>Note:</strong> The ParallelAlgorithm uses <code>std::async</code> with <code>std::launch::async</code> to create true parallel execution. Each job executes in its own thread, which can lead to high resource usage if a large number of jobs are queued. Consider the system capabilities when determining the number of parallel jobs.
+        </div>
+    </section>
+</body>
+</html>

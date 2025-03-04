@@ -58,75 +58,73 @@ int main() {
     std::cout << "---------------" << std::endl;
 
     // Create a counter with range 0-10, starting at 5
-    auto counter = std::make_shared<Counter>(5, 0, 10);
+    Counter counter(5, 0, 10);
 
     // Create logger and observer
-    auto logger = std::make_shared<Logger>("Counter:");
-    auto observer = std::make_shared<CounterObserver>("Observer1");
+    Logger logger("Counter:");
+    CounterObserver observer("Observer1");
 
     // Connect logger to counter
-    logger->connectAllSignalsTo(counter.get());
+    logger.connectAllSignalsTo(&counter);
 
     // Connect observer to specific counter signals
-    counter->connect("valueChanged", observer.get(),
-                         &CounterObserver::onValueChanged);
-    counter->connect("limitReached", observer.get(),
-                         &CounterObserver::onLimitReached);
-    counter->connect("reset", observer.get(), &CounterObserver::onReset);
+    counter.connect("valueChanged", &observer, &CounterObserver::onValueChanged);
+    counter.connect("limitReached", &observer, &CounterObserver::onLimitReached);
+    counter.connect("reset", &observer, &CounterObserver::onReset);
 
-    std::cout << "Initial value: " << counter->getValue() << std::endl;
+    std::cout << "Initial value: " << counter.getValue() << std::endl;
 
     // Demonstrate increment
     std::cout << "\nIncrementing..." << std::endl;
-    counter->increment();
-    counter->increment(2);
+    counter.increment();
+    counter.increment(2);
 
     // Demonstrate reaching max limit
     std::cout << "\nApproaching maximum..." << std::endl;
-    counter->setValue(9);
-    counter->increment(); // Should hit max of 10
-    counter->increment(); // Should remain at 10 with warning
+    counter.setValue(9);
+    counter.increment(); // Should hit max of 10
+    counter.increment(); // Should remain at 10 with warning
 
     // Demonstrate decrement
     std::cout << "\nDecrementing..." << std::endl;
-    counter->decrement();
-    counter->decrement(3);
+    counter.decrement();
+    counter.decrement(3);
 
     // Demonstrate reaching min limit
     std::cout << "\nApproaching minimum..." << std::endl;
-    counter->setValue(1);
-    counter->decrement(); // Should hit min of 0
-    counter->decrement(); // Should remain at 0 with warning
+    counter.setValue(1);
+    counter.decrement(); // Should hit min of 0
+    counter.decrement(); // Should remain at 0 with warning
 
     // Demonstrate reset
     std::cout << "\nResetting..." << std::endl;
-    counter->reset();
+    counter.reset();
 
     // Demonstrate changing limits
     std::cout << "\nChanging limits..." << std::endl;
     std::cout << "Setting min to 2" << std::endl;
-    counter->setMinValue(
+    counter.setMinValue(
         2); // This should also move the current value (5) up to 2
 
     std::cout << "Setting max to 8" << std::endl;
-    counter->setMaxValue(8); // This shouldn't affect the current value
+    counter.setMaxValue(8); // This shouldn't affect the current value
 
     // Demonstrate value clamping with the new limits
     std::cout << "\nTesting new limits..." << std::endl;
-    counter->setValue(1); // Should fail and warn
-    counter->setValue(9); // Should fail and warn
-    counter->setValue(7); // Should succeed
+    counter.setValue(1); // Should fail and warn
+    counter.setValue(9); // Should fail and warn
+    counter.setValue(7); // Should succeed
 
     // Demonstrate removing limits
     std::cout << "\nRemoving limits..." << std::endl;
-    counter->setMinValue(std::nullopt);
-    counter->setMaxValue(std::nullopt);
+    counter.setMinValue(std::nullopt);
+    counter.setMaxValue(std::nullopt);
 
     std::cout << "Testing without limits..." << std::endl;
-    counter->setValue(-10); // Should now succeed
-    counter->setValue(20);  // Should now succeed
+    counter.setValue(-10); // Should now succeed
+    counter.setValue(20);  // Should now succeed
 
-    std::cout << "\nFinal value: " << counter->getValue() << std::endl;
+    std::cout << "\nFinal value: " << counter.getValue() << std::endl;
 
     return 0;
 }

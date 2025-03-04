@@ -65,6 +65,7 @@ auto_discover_tests()
 
 add_subdirectory(examples/concurrent)
 add_subdirectory(examples/counter)
+add_subdirectory(examples/data-processor)
 add_subdirectory(examples/parallel)
 add_subdirectory(examples/pi-1)
 add_subdirectory(examples/pi-2)

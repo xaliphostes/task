@@ -23,7 +23,7 @@
 
 #pragma once
 #include "Task.h"
-#include <task/Counter.h>
+#include <optional>
 
 /**
  * A simple counter class that uses the SignalSlot system to emit signals

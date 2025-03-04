@@ -20,3 +20,4 @@
 - [Concurrent](examples/concurrent.md)
 - [Parallel](examples/parallel.md)
 - [Data processor](examples/data-processor.md)
+- [Link to the **dataframe** lib](examples/dataframe-integration.md)

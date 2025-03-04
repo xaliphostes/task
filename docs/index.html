@@ -170,6 +170,14 @@
             border-bottom: 1px solid var(--accent-color);
             padding-bottom: 5px;
         }
+
+        .note {
+            background-color: rgba(136, 192, 208, 0.2);
+            border-left: 4px solid var(--accent-color);
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 0 5px 5px 0;
+        }
     </style>
 </head>
 
@@ -183,11 +191,16 @@
                 loosely coupled, event-driven architectures that are both scalable and maintainable.</p>
         </div>
 
+        <div class="note">
+            <strong>Thread Safety:</strong> The Task Framework is designed with concurrency in mind, featuring comprehensive thread safety mechanisms throughout its components. Each component includes robust synchronization to enable safe concurrent operation without requiring external locks in most cases. This architecture allows you to build high-performance concurrent applications while minimizing the risk of race conditions and deadlocks.
+        </div>
+
         <h2>Key Features</h2>
         <ul class="feature-list">
             <li><strong>Signal-Slot Communication:</strong> Enable loosely coupled communication between components</li>
             <li><strong>Task-Based Architecture:</strong> Structure applications around well-defined tasks</li>
             <li><strong>Parallel Execution:</strong> Easily distribute work across multiple threads</li>
+            <li><strong>Thread Safety:</strong> Comprehensive synchronization with atomics, mutexes, and lock-free techniques</li>
             <li><strong>Execution Control:</strong> Start, stop, and monitor task execution</li>
             <li><strong>Progress Reporting:</strong> Track and report progress of long-running operations</li>
             <li><strong>Flexible Job Handling:</strong> Process sequences of jobs in sequential or parallel modes</li>
@@ -201,19 +214,18 @@
     <div class="container">
         <div class="module-card">
             <h3>SignalSlot</h3>
-            <p>Implements a thread-safe event notification system that enables loosely
-                coupled communication between components.</p>
+            <p>Implements a flexible, thread-safe event notification system that enables loosely coupled communication between components.</p>
             <div>
                 <span class="tag">Base Class</span>
                 <span class="tag">Communication</span>
+                <span class="tag">Thread-Safe</span>
             </div>
             <a href="signalslot.html" class="button">View Documentation</a>
         </div>
 
         <div class="module-card">
             <h3>Task</h3>
-            <p>The foundation for all task components in the framework, with standard signals for task lifecycle events.
-            </p>
+            <p>The foundation for all task components in the framework, with standard signals for task lifecycle events.</p>
             <div>
                 <span class="tag">Base Class</span>
                 <span class="tag">Core</span>
@@ -223,8 +235,7 @@
 
         <div class="module-card">
             <h3>Algorithm</h3>
-            <p>Provides a framework for implementing executable algorithms with standardized signaling and progress
-                reporting.</p>
+            <p>Provides a framework for implementing executable algorithms with standardized signaling and progress reporting.</p>
             <div>
                 <span class="tag">Core</span>
                 <span class="tag">Execution</span>
@@ -244,10 +255,11 @@
 
         <div class="module-card">
             <h3>ParallelAlgorithm</h3>
-            <p>Provides a framework for executing multiple jobs concurrently across multiple threads.</p>
+            <p>Provides a thread-safe framework for executing multiple jobs concurrently across multiple threads.</p>
             <div>
                 <span class="tag">Parallel</span>
                 <span class="tag">Job Processing</span>
+                <span class="tag">Thread-Safe</span>
             </div>
             <a href="parallelalgorithm.html" class="button">View Documentation</a>
         </div>
@@ -269,20 +281,22 @@
 
         <div class="module-card">
             <h3>ThreadPool</h3>
-            <p>Manages a collection of Runnable tasks and executes them in parallel across available CPU cores.</p>
+            <p>Thread-safe manager that handles a collection of Runnable tasks and executes them in parallel across available CPU cores.</p>
             <div>
                 <span class="tag">Parallel</span>
                 <span class="tag">Performance</span>
+                <span class="tag">Thread-Safe</span>
             </div>
             <a href="threadpool.html" class="button">View Documentation</a>
         </div>
 
         <div class="module-card">
             <h3>TaskQueue</h3>
-            <p>Priority-based task scheduling system that executes tasks based on their importance level.</p>
+            <p>Thread-safe, priority-based task scheduling system that executes tasks based on their importance level.</p>
             <div>
                 <span class="tag">Scheduling</span>
                 <span class="tag">Prioritization</span>
+                <span class="tag">Thread-Safe</span>
             </div>
             <a href="taskqueue.html" class="button">View Documentation</a>
         </div>
@@ -304,10 +318,11 @@
 
         <div class="module-card">
             <h3>Counter</h3>
-            <p>Versatile component that provides a signal-emitting numeric counter with configurable bounds.</p>
+            <p>Thread-safe component that provides a signal-emitting numeric counter with configurable bounds.</p>
             <div>
                 <span class="tag">Utility</span>
                 <span class="tag">State</span>
+                <span class="tag">Thread-Safe</span>
             </div>
             <a href="counter.html" class="button">View Documentation</a>
         </div>
@@ -324,32 +339,83 @@
 
         <div class="module-card">
             <h3>Logger</h3>
-            <p>Centralized logging component that captures and formats log messages from task components.</p>
+            <p>Thread-safe centralized logging component that captures and formats log messages from task components.</p>
             <div>
                 <span class="tag">Utility</span>
                 <span class="tag">Logging</span>
+                <span class="tag">Thread-Safe</span>
             </div>
             <a href="logger.html" class="button">View Documentation</a>
         </div>
 
         <div class="module-card">
             <h3>ProgressMonitor</h3>
-            <p>Specialized task that tracks and responds to progress events across multiple tasks.</p>
+            <p>Specialized task that tracks and responds to progress events across multiple tasks with thread-safe monitoring.</p>
             <div>
                 <span class="tag">Monitoring</span>
                 <span class="tag">Progress</span>
+                <span class="tag">Thread-Safe</span>
             </div>
             <a href="progressmonitor.html" class="button">View Documentation</a>
         </div>
 
         <div class="module-card">
             <h3>TaskObserver</h3>
-            <p>Monitoring tool that collects and analyzes statistics about task execution across the system.</p>
+            <p>Thread-safe monitoring tool that collects and analyzes statistics about task execution across the system.</p>
             <div>
                 <span class="tag">Monitoring</span>
                 <span class="tag">Statistics</span>
+                <span class="tag">Thread-Safe</span>
             </div>
             <a href="taskobserver.html" class="button">View Documentation</a>
+        </div>
+    </div>
+
+    <div class="category">
+        <h2>Concurrency Features</h2>
+    </div>
+    <div class="container">
+        <div class="module-card">
+            <h3>Thread Safety</h3>
+            <p>The framework provides comprehensive thread safety with multiple synchronization mechanisms.</p>
+            <div>
+                <span class="tag">Concurrency</span>
+                <span class="tag">Design</span>
+            </div>
+            <ul class="feature-list">
+                <li>Mutex protection for shared state</li>
+                <li>Atomic operations for counters</li>
+                <li>Lock-free algorithms where possible</li>
+                <li>Thread-safe signal emission</li>
+            </ul>
+        </div>
+        
+        <div class="module-card">
+            <h3>Asynchronous Execution</h3>
+            <p>Execute tasks asynchronously with control over their lifecycle.</p>
+            <div>
+                <span class="tag">Concurrency</span>
+                <span class="tag">Performance</span>
+            </div>
+            <ul class="feature-list">
+                <li>Future-based async operations</li>
+                <li>Non-blocking execution</li>
+                <li>Structured concurrency patterns</li>
+            </ul>
+        </div>
+        
+        <div class="module-card">
+            <h3>Cancellation Support</h3>
+            <p>Robust cancellation mechanisms for stopping long-running operations.</p>
+            <div>
+                <span class="tag">Control</span>
+                <span class="tag">Responsiveness</span>
+            </div>
+            <ul class="feature-list">
+                <li>Cooperative cancellation</li>
+                <li>Resource cleanup on cancel</li>
+                <li>Thread-safe stop requests</li>
+            </ul>
         </div>
     </div>
 </body>

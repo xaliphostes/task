@@ -1,87 +1,37 @@
-# Task
-
-<p align="center">
-  <img src="https://img.shields.io/static/v1?label=Linux&logo=linux&logoColor=white&message=support&color=success" alt="Linux support">
-  <img src="https://img.shields.io/static/v1?label=macOS&logo=apple&logoColor=white&message=support&color=success" alt="macOS support">
-  <img src="https://img.shields.io/static/v1?label=Windows&logo=windows&logoColor=white&message=soon&color=red" alt="Windows support">
-</p>
-
-<p align="center">
-  <img src="https://img.shields.io/badge/C%2B%2B-20-blue.svg" alt="Language">
-  <img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="License">
-</p>
-
-A thread-safe, minimalist reactive library in C++
-
-## Key Features
-- **Thread-Safe Signals & Slots**: Robust communication between components in multi-threaded environments
-- **Parallel Task Processing**: Efficient distribution of workloads across multiple threads
-- **Reactive Programming Model**: Signal-based architecture for decoupled, event-driven applications
-- **Progress Tracking**: Built-in mechanisms for monitoring and reporting execution progress
-- **Comprehensive Task Management**: Execution control with support for cancellation and status reporting
-
-## Requirements
-- C++20 (with C++23 support coming soon)
-- CMake
-
-## Compilation
-Create a `build` directory, **go inside** and type:
-```sh
-cmake .. && make -j12
-```
-
-## Running Unit Tests
-**NOTE**: The internal CMake test framework is used to perform unit testing.
-
-In the **same directory** as for the compilation (i.e., the `build` directory), type:
-```sh
-ctest
-```
-or
-```sh
-make test
-```
-
-## [Documentation in Markdown](docs/index.md)
-
-## Thread-Safe SignalSlot System
-
-The core of this library is the SignalSlot system, which now provides comprehensive thread safety guarantees:
-
-- **Concurrent Signal Emission**: Multiple threads can safely emit signals simultaneously
-- **Thread-Safe Connections**: Connect and disconnect operations are protected by mutex locks
-- **Snapshot-Based Emissions**: Signal handlers are called on a snapshot to prevent iterator invalidation
-- **Atomic Connection State**: Connection status is tracked with atomic variables
-- **Synchronization Policies**: Control how signals are processed across threads
-
-Example of thread-safe signal usage:
-
-```cpp
-// Thread-safe signal creation and connection
-myComponent->createSignal("dataReady");
-myComponent->connect("dataReady", [](const ArgumentPack& args) {
-    // This handler can be safely called from any thread
-    auto data = args.get<DataObject>(0);
-    processData(data);
-});
-
-// Emit signals from any thread
-myComponent->emit("dataReady", args);
-```
-
-## Custom Algorithm Example
-This example demonstrates a comprehensive sensor data processing pipeline that leverages the thread-safe features of this library.
-
-The example creates a robust pipeline for processing IoT sensor data that showcases the power of the enhanced task library. It safely handles concurrent processing of sensor data streams without race conditions or data corruption.
-
-It also demonstrates important operational features like state persistence, performance profiling, and graceful shutdown handling.
-
-This example showcases how the enhanced task library can be used to build sophisticated, resilient, multi-threaded data processing systems with minimal boilerplate code, allowing developers to focus on the business logic rather than concurrency infrastructure.
-
-See this [**README**](examples/complete-example/README.md) in the `example/complete-example` folder
+[< Back](../index.md)
 
 ## Task Library Demo
-The following example showcases a parallel data processing system with thread-safe components:
+
+### Overview
+The following example demonstrates a complete parallel data processing application that showcases the core capabilities of the Task library in a realistic multi-threaded scenario. This demo illustrates how the library's components can be combined to create a robust, efficient data processing pipeline with proper progress monitoring, logging, and error handling.
+
+### What It Does
+The demo simulates a real-world scenario where multiple data processors run in parallel to handle different datasets. Each processor:
+1. Processes a random amount of data with varying processing times
+2. Reports its progress continuously
+3. Emits log messages at milestone points
+4. Handles cancellation requests gracefully
+
+The application coordinates these processors using the thread pool, monitors overall progress, measures performance, and provides comprehensive logging—all with thread-safe communication between components.
+
+### Key Components Demonstrated
+- **ThreadPool**: Manages concurrent execution of multiple data processing tasks
+- **DataProcessor**: Custom Runnable implementation that performs the actual work with progress reporting
+- **ProgressMonitor**: Tracks and consolidates progress information from all running tasks
+- **Logger**: Captures and displays messages from all components in a centralized way
+- **Chronometer**: Precisely measures execution times for performance analysis
+- **Signal-Slot System**: Enables thread-safe communication between all components
+
+### Real-World Applications
+This pattern is directly applicable to many real-world scenarios:
+- ETL (Extract, Transform, Load) data pipelines
+- Image or video processing applications
+- Scientific data analysis
+- Batch processing systems
+- Distributed computation frameworks
+- Service-oriented architectures
+
+### Code Example
 
 ```cpp
 #include <chrono>
@@ -232,9 +182,3 @@ int main() {
     return 0;
 }
 ```
-
-## Licence
-MIT
-
-## Contact
-fmaerten@gmail.com

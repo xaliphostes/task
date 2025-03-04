@@ -19,3 +19,4 @@
 ## Examples
 - [Concurrent](examples/concurrent.md)
 - [Parallel](examples/parallel.md)
+- [Data processor](examples/data-processor.md)

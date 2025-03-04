@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chronometer - Task Framework Documentation</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+    <a href="index.html" class="back-link">Back to Index</a>
+
+    <section class="section">
+        <h1>Chronometer</h1>
+        <p class="inheritance">Inherits from <a href="task.html">Task</a></p>
+
+        <div class="toc">
+            <h4>Contents</h4>
+            <ul>
+                <li><a href="#overview">Overview</a></li>
+                <li><a href="#features">Features</a></li>
+                <li><a href="#interface">Class Interface</a></li>
+                <li><a href="#signals">Signals</a></li>
+                <li><a href="#usage">Usage Examples</a></li>
+                <li><a href="#timing">Timing Implementation</a></li>
+                <li><a href="#error-handling">Error Handling</a></li>
+                <li><a href="#integration">Integration with Other Components</a></li>
+                <li><a href="#best-practices">Best Practices</a></li>
+                <li><a href="#performance">Performance Considerations</a></li>
+            </ul>
+        </div>
+
+        <div id="overview" class="card">
+            <p>The <code>Chronometer</code> class is a utility component in the task framework that provides precise
+                time measurement capabilities. It extends the base <code>Task</code> class to integrate with the
+                signal-slot system, allowing it to notify other components about timing events. The Chronometer provides
+                a simple interface for measuring elapsed time between start and stop operations, making it ideal for
+                performance profiling, operation timing, and benchmarking within the application.</p>
+        </div>
+
+        <h2 id="features">Features</h2>
+        <ul class="feature-list">
+            <li><strong>High-Precision Timing:</strong> Uses C++ standard library chrono for accurate time measurement
+            </li>
+            <li><strong>Signal-Based Notifications:</strong> Emits signals for timing events and results</li>
+            <li><strong>Simple Interface:</strong> Easy-to-use start/stop API for time measurement</li>
+            <li><strong>Millisecond Resolution:</strong> Reports elapsed time in milliseconds</li>
+            <li><strong>Error Reporting:</strong> Provides feedback if timing operations are used incorrectly</li>
+            <li><strong>Resource Management:</strong> Automatically manages internal timing resources</li>
+            <li><strong>Integration with Task Framework:</strong> Works seamlessly with other Task-derived components
+            </li>
+        </ul>
+
+        <h2 id="interface">Class Interface</h2>
+        <pre><code>class Chronometer : public Task {
+public:
+    // Constructor
+    Chronometer();
+
+    // Start the timer
+    void start();
+    
+    // Stop the timer and get elapsed time in milliseconds
+    int64_t stop();
+
+private:
+    std::unique_ptr&lt;std::chrono::system_clock::time_point&gt; m_startTime;
+};</code></pre>
+
+        <h2 id="signals">Signals</h2>
+        <p>Chronometer emits the following signals:</p>
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Signal</th>
+                        <th>Type</th>
+                        <th>Description</th>
+                        <th>Arguments</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><code>started</code></td>
+                        <td>Simple</td>
+                        <td>Emitted when the timer starts</td>
+                        <td>None</td>
+                    </tr>
+                    <tr>
+                        <td><code>finished</code></td>
+                        <td>Simple</td>
+                        <td>Emitted when the timer stops</td>
+                        <td>None</td>
+                    </tr>
+                    <tr>
+                        <td><code>timing</code></td>
+                        <td>Data</td>
+                        <td>Reports elapsed time on stop</td>
+                        <td>int64_t (elapsed time in ms)</td>
+                    </tr>
+                    <tr>
+                        <td><code>error</code></td>
+                        <td>Data</td>
+                        <td>Reports errors during timing operations</td>
+                        <td>std::string (error message)</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <h2 id="usage">Usage Examples</h2>
+
+        <h3>Basic Timing Example</h3>
+        <div class="example-header">Simple Timing Operation</div>
+        <pre class="example-content"><code>// Create the chronometer
+auto timer = std::make_shared&lt;Chronometer&gt;();
+
+// Connect to signals
+timer->connectSimple("started", []() {
+    std::cout << "Timer started" << std::endl;
+});
+
+timer->connectSimple("finished", []() {
+    std::cout << "Timer stopped" << std::endl;
+});
+
+timer->connectData("timing", [](const ArgumentPack& args) {
+    int64_t elapsedMs = args.get&lt;int64_t&gt;(0);
+    std::cout << "Elapsed time: " << elapsedMs << " ms" << std::endl;
+});
+
+// Start the timer
+timer->start();
+
+// Perform the operation to be timed
+std::this_thread::sleep_for(std::chrono::milliseconds(500));
+
+// Stop the timer and get the elapsed time
+int64_t elapsed = timer->stop();
+
+// Use the elapsed time
+if (elapsed > 1000) {
+    std::cout << "Operation took more than 1 second!" << std::endl;
+}</code></pre>
+
+        <h3>Benchmarking an Algorithm</h3>
+        <div class="example-header">Algorithm Performance Measurement</div>
+        <pre class="example-content"><code>// Create algorithm and chronometer
+auto algorithm = std::make_shared&lt;MyAlgorithm&gt;();
+auto timer = std::make_shared&lt;Chronometer&gt;();
+
+// Connect chronometer to log timing info
+timer->connectData("timing", [](const ArgumentPack& args) {
+    int64_t elapsedMs = args.get&lt;int64_t&gt;(0);
+    std::cout << "Algorithm execution time: " << elapsedMs << " ms" << std::endl;
+});
+
+// Time the algorithm execution
+timer->start();
+algorithm->exec();
+timer->stop();</code></pre>
+
+        <h3>Timing Multiple Operations</h3>
+        <div class="example-header">Multiple Timing Measurements</div>
+        <pre class="example-content"><code>// Create the chronometer
+auto timer = std::make_shared&lt;Chronometer&gt;();
+
+// Function to time an operation
+auto timeOperation = [&timer](const std::string& name, std::function&lt;void()&gt; operation) {
+    std::cout << "Starting " << name << "..." << std::endl;
+    timer->start();
+    operation();
+    int64_t elapsed = timer->stop();
+    std::cout << name << " completed in " << elapsed << " ms" << std::endl;
+    return elapsed;
+};
+
+// Time different operations
+timeOperation("Data loading", []() {
+    // Simulate data loading
+    std::this_thread::sleep_for(std::chrono::milliseconds(300));
+});
+
+timeOperation("Calculations", []() {
+    // Simulate calculations
+    std::this_thread::sleep_for(std::chrono::milliseconds(700));
+});
+
+timeOperation("Rendering", []() {
+    // Simulate rendering
+    std::this_thread::sleep_for(std::chrono::milliseconds(500));
+});</code></pre>
+
+        <h2 id="timing">Timing Implementation</h2>
+        <p>The Chronometer uses the C++ standard library's chrono facilities for high-precision timing:</p>
+
+        <div class="example-header">Implementation Details</div>
+        <pre class="example-content"><code>void Chronometer::start() {
+    m_startTime = std::make_unique&lt;std::chrono::system_clock::time_point&gt;(
+        std::chrono::system_clock::now());
+    emit("started");
+}
+
+int64_t Chronometer::stop() {
+    if (!m_startTime) {
+        emitString("error", "Chronometer not started.");
+        return 0;
+    }
+
+    auto now = std::chrono::system_clock::now();
+    auto timeDiff = std::chrono::duration_cast&lt;std::chrono::milliseconds&gt;(
+                        now - *m_startTime)
+                        .count();
+
+    // Create ArgumentPack with timing information
+    ArgumentPack timingArgs;
+    timingArgs.add&lt;int64_t&gt;(timeDiff);
+
+    // Emit both signals
+    emit("finished");
+    emit("timing", timingArgs);
+
+    m_startTime.reset();
+
+    return timeDiff;
+}</code></pre>
+
+        <p>The implementation follows these steps:</p>
+        <ol class="feature-list">
+            <li><strong>Timer Start:</strong> Creates a time point using <code>std::chrono::system_clock::now()</code>
+            </li>
+            <li><strong>Timer Stop:</strong> Calculates duration between start and current time</li>
+            <li><strong>Duration Calculation:</strong> Converts duration to milliseconds using
+                <code>std::chrono::duration_cast</code></li>
+            <li><strong>Signal Emission:</strong> Emits signals to notify listeners of the timing result</li>
+            <li><strong>Resource Cleanup:</strong> Resets the start time pointer to prepare for next timing operation
+            </li>
+        </ol>
+
+        <h2 id="error-handling">Error Handling</h2>
+        <p>The Chronometer includes basic error handling to prevent misuse:</p>
+
+        <ul class="feature-list">
+            <li><strong>Stop Without Start:</strong> Calling <code>stop()</code> before <code>start()</code> emits an
+                error signal</li>
+            <li><strong>Double Start:</strong> Calling <code>start()</code> multiple times overwrites the previous start
+                time</li>
+            <li><strong>Resource Management:</strong> Uses smart pointers to avoid memory leaks</li>
+        </ul>
+
+        <div class="example-header">Error Handling Example</div>
+        <pre class="example-content"><code>// Create the chronometer
+auto timer = std::make_shared&lt;Chronometer&gt;();
+
+// Connect to error signal
+timer->connectData("error", [](const ArgumentPack& args) {
+    std::string errorMsg = args.get&lt;std::string&gt;(0);
+    std::cerr << "Chronometer error: " << errorMsg << std::endl;
+});
+
+// Error: Stop without start
+timer->stop();  // Will emit error: "Chronometer not started."
+
+// Correct usage
+timer->start();
+// ... operations ...
+timer->stop();  // Works correctly</code></pre>
+
+        <h2 id="integration">Integration with Other Components</h2>
+        <p>The Chronometer can be integrated with various components in the task framework:</p>
+
+        <h3>With Algorithm</h3>
+        <div class="example-header">Time Algorithm Execution</div>
+        <pre class="example-content"><code>// Time algorithm execution
+void timeAlgorithm(std::shared_ptr&lt;Algorithm&gt; algorithm, const ArgumentPack& args) {
+    auto timer = std::make_shared&lt;Chronometer&gt;();
+    
+    // Log the results
+    auto logger = std::make_shared&lt;Logger&gt;("Performance");
+    timer->connectData("timing", [logger](const ArgumentPack& args) {
+        int64_t elapsedMs = args.get&lt;int64_t&gt;(0);
+        ArgumentPack logArgs;
+        logArgs.add&lt;std::string&gt;("Execution time: " + std::to_string(elapsedMs) + " ms");
+        logger->log(logArgs);
+    });
+    
+    // Start timing
+    timer->start();
+    
+    // Run the algorithm
+    algorithm->exec(args);
+    
+    // Stop timing
+    timer->stop();
+}</code></pre>
+
+        <h3>With ThreadPool</h3>
+        <div class="example-header">Time Parallel Task Execution</div>
+        <pre class="example-content"><code>// Time thread pool execution
+void benchmarkThreadPool(std::shared_ptr&lt;ThreadPool&gt; pool) {
+    auto timer = std::make_shared&lt;Chronometer&gt;();
+    
+    // Connect to pool's finished signal to stop the timer
+    pool->connectSimple("finished", [timer]() {
+        timer->stop();
+    });
+    
+    // Start timing and execute tasks
+    timer->start();
+    pool->exec();
+    
+    // Timer will be stopped automatically when pool emits 'finished'
+}</code></pre>
+
+        <h2 id="best-practices">Best Practices</h2>
+        <ul class="feature-list">
+            <li><strong>Timer Pairing:</strong> Always pair <code>start()</code> with <code>stop()</code> calls</li>
+            <li><strong>Signal Usage:</strong> Connect to the <code>timing</code> signal for automatic time logging</li>
+            <li><strong>Return Value Usage:</strong> Use the return value of <code>stop()</code> when immediate timing
+                data is needed</li>
+            <li><strong>Resource Cleanup:</strong> Call <code>stop()</code> to ensure proper cleanup of timing resources
+            </li>
+            <li><strong>Nested Timing:</strong> Use multiple Chronometer instances for nested timing operations</li>
+            <li><strong>Error Handling:</strong> Connect to the error signal to catch timing operation errors</li>
+            <li><strong>Timing Precision:</strong> Be aware that system load can affect timing precision</li>
+        </ul>
+
+        <h2 id="performance">Performance Considerations</h2>
+        <ul class="feature-list">
+            <li><strong>Overhead:</strong> The Chronometer adds minimal overhead to the timed operation</li>
+            <li><strong>Resolution:</strong> The timing resolution is in milliseconds, suitable for most application
+                timing needs</li>
+            <li><strong>System Clock:</strong> Uses system_clock which may be affected by system time changes</li>
+            <li><strong>Signal Emission:</strong> Signal handlers are executed synchronously and add to the measured
+                time</li>
+            <li><strong>Memory Usage:</strong> Uses a single unique_ptr for the start time, minimal memory footprint
+            </li>
+        </ul>
+
+        <div class="note">
+            <strong>Note:</strong> For extremely high-precision timing requirements (nanosecond level), you may need to
+            use <code>std::chrono::high_resolution_clock</code> instead. The current implementation focuses on
+            simplicity and compatibility for general application timing needs.
+        </div>
+
+        <h2 id="implementation-details">Implementation Details</h2>
+        <ul class="feature-list">
+            <li>Uses <code>std::chrono::system_clock</code> for time measurement</li>
+            <li>Stores the start time as a unique pointer to allow for null checking</li>
+            <li>Timing resolution is in milliseconds (int64_t) for broad compatibility</li>
+            <li>The <code>timing</code> signal is created during construction for consistency</li>
+            <li>The start time is reset after <code>stop()</code> to prevent reuse without a new <code>start()</code>
+                call</li>
+            <li>Internal state is maintained by the m_startTime pointer being null or non-null</li>
+        </ul>
+    </section>
+</body>
+
+</html>

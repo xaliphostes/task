@@ -22,6 +22,7 @@
  */
 
 #include <algorithm>
+#include <optional>
 #include <sstream>
 #include <task/Counter.h>
 
@@ -32,7 +33,7 @@ Counter::Counter(int initialValue, std::optional<int> minValue,
     // Create standard signals
     createSignal("valueChanged"); // Emitted when the value changes
     createSignal("limitReached"); // Emitted when hitting min or max
-    createSignal("reset");      // Emitted when reset is called
+    createSignal("reset");        // Emitted when reset is called
 
     // Check initial value is within range
     if (!isInRange(m_value)) {

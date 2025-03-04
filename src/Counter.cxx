@@ -24,7 +24,6 @@
 #include <algorithm>
 #include <optional>
 #include <sstream>
-#include <task/Counter.h>
 
 Counter::Counter(int initialValue, std::optional<int> minValue,
                  std::optional<int> maxValue)

@@ -22,22 +22,32 @@
  */
 
 #pragma once
+#include <atomic>
 #include <functional>
 #include <iostream>
 #include <map>
 #include <memory>
+#include <mutex>
 #include <string>
+#include <type_traits>
 #include <vector>
+
+// -------------------------------------------------------
 
 /**
  * A flexible argument container
  *
  * @code
+ * // Verbose creation:
  * ArgumentPack args;
  * args.add<std::string>("data.csv");
  * args.add<float>(0.75f);
  * args.add<int>(10);
  *
+ * // Direct creation:
+ * ArgumentPack args("data.csv", 0.75f, 10);
+ *
+ * // Access values:
  * std::string filename = args.get<std::string>(0);
  * float threshold = args.get<float>(1);
  * int iterations = args.get<int>(2);
@@ -45,7 +55,13 @@
  */
 class ArgumentPack {
   public:
+    // Default constructor
     ArgumentPack() = default;
+
+    // Variadic template constructor to create with multiple arguments
+    template <typename... Args> ArgumentPack(Args &&...args) {
+        (add(std::forward<Args>(args)), ...);
+    }
 
     // Allow move operations, but disable copy operations
     ArgumentPack(ArgumentPack &&other) noexcept = default;
@@ -96,9 +112,13 @@ class ArgumentPack {
     std::vector<std::unique_ptr<BaseHolder>> m_args;
 };
 
+// -------------------------------------------------------
+
 // Forward declaration
 class ConnectionBase;
 using ConnectionHandle = std::shared_ptr<ConnectionBase>;
+
+// -------------------------------------------------------
 
 // Base class for connections
 class ConnectionBase {
@@ -108,6 +128,8 @@ class ConnectionBase {
     virtual bool connected() const = 0;
 };
 
+// -------------------------------------------------------
+
 // Signal interface class
 class SignalBase {
   public:
@@ -115,152 +137,143 @@ class SignalBase {
     virtual void disconnectAll() = 0;
 };
 
-// Only two types of signals: with or without args
-enum class SignalType {
-    NO_ARGS,  // Signal with no arguments (simple notification)
-    WITH_ARGS // Signal with ArgumentPack arguments
+// -------------------------------------------------------
+
+// Synchronization policy for signal emission
+enum class SyncPolicy {
+    Direct,  // Execute handlers directly in the emitting thread
+    Blocking // Block until all handlers have completed
 };
 
-// Simple signal with no arguments
-class SimpleSignal : public SignalBase {
+// -------------------------------------------------------
+
+/**
+ * Thread-safe unified signal class that can handle both parameterless and
+ * parameter-based slots.
+ */
+class Signal : public SignalBase {
   public:
-    using SlotFunction = std::function<void()>;
+    using SimpleSlotFunction = std::function<void()>;
+    using DataSlotFunction = std::function<void(const ArgumentPack &)>;
 
-    // Connect a function to this signal
-    ConnectionHandle connect(SlotFunction &&slot);
+    // Connect any callable object
+    template <typename Func> ConnectionHandle connect(Func &&slot);
 
-    // Connect a member function
+    // Connect to member functions (no arguments)
     template <typename T>
     ConnectionHandle connect(T *instance, void (T::*method)());
 
-    // Emit the signal
-    void emit() const;
-
-    // Clear all connections
-    void disconnectAll() override;
-
-  private:
-    // Concrete connection class
-    class Connection : public ConnectionBase {
-      public:
-        Connection(SimpleSignal *signal, SlotFunction slot);
-        void disconnect() override;
-        bool connected() const override;
-        void call() const;
-
-      private:
-        SimpleSignal *m_signal;
-        SlotFunction m_slot;
-        bool m_connected;
-    };
-
-    mutable std::vector<std::weak_ptr<Connection>> m_connections;
-};
-
-// Signal with ArgumentPack
-class DataSignal : public SignalBase {
-  public:
-    using SlotFunction = std::function<void(const ArgumentPack &)>;
-
-    // Connect a function to this signal
-    ConnectionHandle connect(SlotFunction &&slot);
-
-    // Connect a member function
+    // Connect to member functions (with ArgumentPack)
     template <typename T>
     ConnectionHandle connect(T *instance,
                              void (T::*method)(const ArgumentPack &));
 
-    // Emit the signal
-    void emit(const ArgumentPack &args) const;
+    // Emit without arguments
+    void emit(SyncPolicy policy = SyncPolicy::Direct) const;
 
-    // Emit with a single string argument (convenience method)
-    void emitString(const std::string &value) const;
+    // Emit with arguments
+    void emit(const ArgumentPack &args,
+              SyncPolicy policy = SyncPolicy::Direct) const;
+
+    // Convenience method to emit with a string argument
+    void emitString(const std::string &value,
+                    SyncPolicy policy = SyncPolicy::Direct) const;
 
     // Clear all connections
     void disconnectAll() override;
 
   private:
-    // Concrete connection class
+    // Unified connection class
     class Connection : public ConnectionBase {
       public:
-        Connection(DataSignal *signal, SlotFunction slot);
+        Connection(Signal *signal, SimpleSlotFunction simpleSlot);
+        Connection(Signal *signal, DataSlotFunction dataSlot);
         void disconnect() override;
         bool connected() const override;
+        void call() const;
         void call(const ArgumentPack &args) const;
 
       private:
-        DataSignal *m_signal;
-        SlotFunction m_slot;
-        bool m_connected;
+        Signal *m_signal;
+        SimpleSlotFunction m_simpleSlot;
+        DataSlotFunction m_dataSlot;
+        std::atomic<bool> m_connected;
+        bool m_takesArguments;
     };
 
+    // Take a snapshot of active connections for thread-safe emission
+    std::vector<std::shared_ptr<Connection>> getActiveConnections() const;
+
+    mutable std::mutex m_connectionsMutex;
     mutable std::vector<std::weak_ptr<Connection>> m_connections;
 };
 
-// SignalSlot class that manages signals by name
+// -------------------------------------------------------
+
+/**
+ * Thread-safe signal-slot system for decoupled component communication.
+ *
+ * Thread Safety Guarantees:
+ * - Multiple threads can safely connect to and emit signals
+ * - Signal emission uses a snapshot approach to avoid locking during callbacks
+ * - Handlers are executed in the emitting thread by default
+ * - Connections are thread-safe for creation and disconnection
+ */
 class SignalSlot {
   public:
     SignalSlot(std::ostream &output = std::cerr) : m_output_stream(output) {}
 
-    virtual ~SignalSlot() {
-        for (auto &[name, signal_ptr] : m_signals) {
-            signal_ptr->disconnectAll();
-        }
-        m_signals.clear();
+    virtual ~SignalSlot() { disconnectAllSignals(); }
+
+    void setOutputStream(std::ostream &stream) {
+        std::lock_guard<std::mutex> lock(m_streamMutex);
+        m_output_stream = stream;
     }
 
-    void setOutputStream(std::ostream &stream) { m_output_stream = stream; }
-    std::ostream &stream() const { return m_output_stream; }
+    std::ostream &stream() const {
+        std::lock_guard<std::mutex> lock(m_streamMutex);
+        return m_output_stream;
+    }
 
-    // Create signals
-    bool createSimpleSignal(const std::string &name);
-    bool createDataSignal(const std::string &name);
+    // Create a signal (unified method for both types)
+    bool createSignal(const std::string &name);
 
     // Check signal existence
     bool hasSignal(const std::string &name) const {
+        std::lock_guard<std::mutex> lock(m_signalsMutex);
         return m_signals.find(name) != m_signals.end();
     }
 
-    // Get signal type
-    SignalType getSignalType(const std::string &name) const {
-        if (!hasSignal(name))
-            return SignalType::NO_ARGS; // Default
-        return m_signal_types.at(name);
-    }
+    // Connect any callable to a signal
+    template <typename Func>
+    ConnectionHandle connect(const std::string &name, Func &&slot);
 
-    // Connect to simple signal (no args)
-    ConnectionHandle connectSimple(const std::string &name,
-                                   std::function<void()> slot);
-
-    template <typename T>
-    ConnectionHandle connectSimple(const std::string &name, T *instance,
-                                   void (T::*method)());
-
-    // Connect to data signal (with ArgumentPack)
-    ConnectionHandle
-    connectData(const std::string &name,
-                std::function<void(const ArgumentPack &)> slot);
-
-    template <typename T>
-    ConnectionHandle connectData(const std::string &name, T *instance,
-                                 void (T::*method)(const ArgumentPack &));
+    // Connect member function to a signal (auto-detect argument requirements)
+    template <typename T, typename Method>
+    ConnectionHandle connect(const std::string &name, T *instance,
+                             Method method);
 
     // Emit signals
-    void emit(const std::string &name); // For simple signals
-    void emit(const std::string &name,
-              const ArgumentPack &args); // For data signals
+    void emit(const std::string &name, SyncPolicy policy = SyncPolicy::Direct);
+    void emit(const std::string &name, const ArgumentPack &args,
+              SyncPolicy policy = SyncPolicy::Direct);
+    void emitString(const std::string &name, const std::string &value,
+                    SyncPolicy policy = SyncPolicy::Direct);
 
-    // Convenience method to emit a signal with a single string
-    void emitString(const std::string &name, const std::string &value);
+    // Disconnect all signals
+    void disconnectAllSignals();
 
   private:
-    // Get signal by name and type
-    std::shared_ptr<SimpleSignal> getSimpleSignal(const std::string &name);
-    std::shared_ptr<DataSignal> getDataSignal(const std::string &name);
+    // Get signal by name
+    std::shared_ptr<Signal> getSignal(const std::string &name) const;
 
-    std::map<std::string, std::shared_ptr<SignalBase>> m_signals;
-    std::map<std::string, SignalType> m_signal_types;
+    mutable std::mutex m_signalsMutex;
+    std::map<std::string, std::shared_ptr<Signal>> m_signals;
+
+    mutable std::mutex m_streamMutex;
     std::reference_wrapper<std::ostream> m_output_stream;
 };
+
+// -------------------------------------------------------
 
 #include "inline/SignalSlot.hxx"

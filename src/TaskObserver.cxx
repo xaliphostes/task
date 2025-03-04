@@ -30,10 +30,10 @@
 
 TaskObserver::TaskObserver(const std::string &name) : m_name(name) {
     // Create signals for reporting
-    createDataSignal("statsUpdated");
-    createDataSignal("taskStarted");
-    createDataSignal("taskFinished");
-    createDataSignal("taskFailed");
+    createSignal("statsUpdated");
+    createSignal("taskStarted");
+    createSignal("taskFinished");
+    createSignal("taskFailed");
 }
 
 bool TaskObserver::attach(Task *task, const std::string &taskName) {
@@ -56,19 +56,19 @@ bool TaskObserver::attach(Task *task, const std::string &taskName) {
     // Connect to task signals
     ConnectionHandles handles;
 
-    handles.push_back(task->connectSimple(
+    handles.push_back(task->connect(
         "started", [this, task]() { this->onTaskStarted(task); }));
 
-    handles.push_back(task->connectSimple(
+    handles.push_back(task->connect(
         "finished", [this, task]() { this->onTaskFinished(task); }));
 
     handles.push_back(
-        task->connectData("error", [this, task](const ArgumentPack &args) {
+        task->connect("error", [this, task](const ArgumentPack &args) {
             this->onTaskError(task, args);
         }));
 
     handles.push_back(
-        task->connectData("progress", [this, task](const ArgumentPack &args) {
+        task->connect("progress", [this, task](const ArgumentPack &args) {
             this->onTaskProgress(task, args);
         }));
 

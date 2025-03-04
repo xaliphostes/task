@@ -28,8 +28,8 @@
 
 ParallelAlgorithm::ParallelAlgorithm() {
     // Create additional signals specific to parallel processing
-    createDataSignal("job_started");
-    createDataSignal("job_finished");
+    createSignal("job_started");
+    createSignal("job_finished");
 }
 
 void ParallelAlgorithm::exec(const ArgumentPack &args) {

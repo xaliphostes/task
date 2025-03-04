@@ -57,11 +57,11 @@ TaskQueue::TaskQueue(unsigned int maxConcurrentTasks, bool autoStart)
       m_isRunning(false), m_stopRequested(false) {
 
     // Create standard signals
-    createDataSignal("taskEnqueued");
-    createDataSignal("taskStarted");
-    createDataSignal("taskCompleted");
-    createDataSignal("taskFailed");
-    createDataSignal("queueStats");
+    createSignal("taskEnqueued");
+    createSignal("taskStarted");
+    createSignal("taskCompleted");
+    createSignal("taskFailed");
+    createSignal("queueStats");
 
     // Auto-start if requested
     if (autoStart) {
@@ -373,13 +373,13 @@ void TaskQueue::emitQueueStats() {
 
 void TaskQueue::setupTaskSignals(Runnable *task) {
     // Forward log signals
-    task->connectData(
+    task->connect(
         "log", [this](const ArgumentPack &args) { this->emit("log", args); });
 
-    task->connectData(
+    task->connect(
         "warn", [this](const ArgumentPack &args) { this->emit("warn", args); });
 
-    task->connectData("error", [this](const ArgumentPack &args) {
+    task->connect("error", [this](const ArgumentPack &args) {
         this->emit("error", args);
     });
 }

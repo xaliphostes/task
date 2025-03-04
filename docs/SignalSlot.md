@@ -4,18 +4,19 @@
 
 ## Overview
 
-The `SignalSlot` class implements a flexible event notification system that enables loosely coupled communication between components. It provides a mechanism for objects to register interest in events (signals) and receive notifications when those events occur, without requiring direct dependencies between the signal emitter and receiver. This implementation supports both parameterless signals and signals with arbitrary arguments.
+The `SignalSlot` class implements a thread-safe event notification system that enables loosely coupled communication between components. It provides a mechanism for objects to register interest in events (signals) and receive notifications when those events occur, without requiring direct dependencies between the signal emitter and receiver.
 
 ## Features
 
-- **Decoupled Communication**: Objects can communicate without direct dependencies
-- **Two Signal Types**: Support for both simple (parameterless) signals and data signals (with arguments)
+- **Thread-Safe Communication**: Multiple threads can safely connect to and emit signals
+- **Unified Signal System**: Common interface for both parameterless and parameter-based signals
 - **Type-Safe Arguments**: Strong typing for signal arguments via `ArgumentPack`
-- **Dynamic Signal Creation**: Signals can be created at runtime by name
-- **Method Binding**: Connect signals to instance methods or free functions
-- **Connection Management**: Connections can be stored and disconnected when no longer needed
-- **Resource Safety**: Automatic cleanup of disconnected slots
-- **Flexible Argument Passing**: Support for multiple arguments of various types
+- **Synchronization Policies**: Control how signals are emitted across threads
+- **Snapshot Emission**: Safe signal emission that avoids deadlocks and race conditions
+- **Automatic Type Detection**: Identifies whether handlers require arguments at compile time
+- **Connection Management**: Thread-safe connection creation and cleanup
+- **Resource Safety**: Automatic cleanup of disconnected slots and proper thread synchronization
+- **Flexible Argument Passing**: Support for multiple arguments with convenient constructor syntax
 
 ## Class Interface
 
@@ -31,280 +32,417 @@ public:
     std::ostream &stream() const;
     
     // Signal creation
-    bool createSimpleSignal(const std::string &name);
-    bool createDataSignal(const std::string &name);
+    bool createSignal(const std::string &name);
     
     // Signal checking
     bool hasSignal(const std::string &name) const;
-    SignalType getSignalType(const std::string &name) const;
     
-    // Simple signal connections (no arguments)
-    ConnectionHandle connectSimple(const std::string &name, std::function<void()> slot);
-    template <typename T>
-    ConnectionHandle connectSimple(const std::string &name, T *instance, void (T::*method)());
+    // Connect any callable to a signal
+    template <typename Func>
+    ConnectionHandle connect(const std::string &name, Func&& slot);
     
-    // Data signal connections (with ArgumentPack)
-    ConnectionHandle connectData(const std::string &name, std::function<void(const ArgumentPack &)> slot);
-    template <typename T>
-    ConnectionHandle connectData(const std::string &name, T *instance, void (T::*method)(const ArgumentPack &));
+    // Connect member function to a signal
+    template <typename T, typename Method>
+    ConnectionHandle connect(const std::string &name, T* instance, Method method);
     
     // Signal emission
-    void emit(const std::string &name); // For simple signals
-    void emit(const std::string &name, const ArgumentPack &args); // For data signals
-    void emitString(const std::string &name, const std::string &value); // Convenience for string argument
+    void emit(const std::string &name, SyncPolicy policy = SyncPolicy::Direct);
+    void emit(const std::string &name, const ArgumentPack &args, SyncPolicy policy = SyncPolicy::Direct);
+    void emitString(const std::string &name, const std::string &value, SyncPolicy policy = SyncPolicy::Direct);
     
-private:
-    // Internal signal access methods
-    std::shared_ptr<SimpleSignal> getSimpleSignal(const std::string &name);
-    std::shared_ptr<DataSignal> getDataSignal(const std::string &name);
-    
-    // Signal storage
-    std::map<std::string, std::shared_ptr<SignalBase>> m_signals;
-    std::map<std::string, SignalType> m_signal_types;
-    std::reference_wrapper<std::ostream> m_output_stream;
+    // Cleanup
+    void disconnectAllSignals();
 };
 ```
 
-## Signal Types
+## Synchronization Policies
 
-The SignalSlot system supports two types of signals:
-
-| Signal Type | Class          | Description                                     | Usage                                      |
-| ----------- | -------------- | ----------------------------------------------- | ------------------------------------------ |
-| `NO_ARGS`   | `SimpleSignal` | Signal with no arguments (simple notification)  | Status changes, triggers, completion events |
-| `WITH_ARGS` | `DataSignal`   | Signal with arguments packed in `ArgumentPack` | Data updates, errors with details, results  |
-
-## Usage Example
+The SignalSlot system offers different synchronization policies for signal emission:
 
 ```cpp
-// Class using the SignalSlot system
-class FileDownloader : public SignalSlot {
-public:
-    FileDownloader() {
-        // Create signals for various events
-        createSimpleSignal("downloadStarted");
-        createSimpleSignal("downloadCompleted");
-        createDataSignal("progress");
-        createDataSignal("error");
-        createDataSignal("dataReceived");
-    }
-    
-    void startDownload(const std::string& url) {
-        // Signal that download is starting
-        emit("downloadStarted");
-        
-        try {
-            // Simulate download process
-            for (int i = 0; i <= 10; ++i) {
-                // Report progress
-                ArgumentPack progressArgs;
-                progressArgs.add<float>(i / 10.0f);
-                progressArgs.add<std::string>(url);
-                emit("progress", progressArgs);
-                
-                // Simulate getting data chunks
-                if (i > 0 && i < 10) {
-                    ArgumentPack dataArgs;
-                    dataArgs.add<std::string>("Data chunk " + std::to_string(i));
-                    dataArgs.add<size_t>(1024); // Chunk size
-                    emit("dataReceived", dataArgs);
-                }
-                
-                std::this_thread::sleep_for(std::chrono::milliseconds(100));
-            }
-            
-            // Signal completion
-            emit("downloadCompleted");
-        }
-        catch (const std::exception& e) {
-            // Signal error
-            emitString("error", std::string("Download failed: ") + e.what());
-        }
-    }
+enum class SyncPolicy {
+    Direct,    // Execute handlers directly in the emitting thread
+    Blocking   // Block until all handlers have completed
 };
-
-// Using the SignalSlot system
-void downloadExample() {
-    // Create the downloader
-    auto downloader = std::make_shared<FileDownloader>();
-    
-    // Connect to signals with lambda functions
-    downloader->connectSimple("downloadStarted", []() {
-        std::cout << "Download has started!" << std::endl;
-    });
-    
-    downloader->connectSimple("downloadCompleted", []() {
-        std::cout << "Download completed successfully!" << std::endl;
-    });
-    
-    downloader->connectData("progress", [](const ArgumentPack& args) {
-        float progress = args.get<float>(0);
-        std::string url = args.get<std::string>(1);
-        std::cout << "Downloading " << url << ": " 
-                 << (progress * 100) << "%" << std::endl;
-    });
-    
-    downloader->connectData("dataReceived", [](const ArgumentPack& args) {
-        std::string data = args.get<std::string>(0);
-        size_t size = args.get<size_t>(1);
-        std::cout << "Received " << size << " bytes: " << data << std::endl;
-    });
-    
-    downloader->connectData("error", [](const ArgumentPack& args) {
-        std::string errorMsg = args.get<std::string>(0);
-        std::cerr << "ERROR: " << errorMsg << std::endl;
-    });
-    
-    // Start the download
-    downloader->startDownload("https://example.com/file.zip");
-}
 ```
 
-## ConnectionHandle
+These policies control how signal handlers are executed:
 
-The SignalSlot system provides a `ConnectionHandle` for managing signal-slot connections:
-
-```cpp
-// Get a connection handle when connecting to a signal
-ConnectionHandle connection = object->connectData("dataReceived", myCallback);
-
-// Later, disconnect when no longer needed
-connection->disconnect();
-
-// Check if still connected
-if (connection->connected()) {
-    // ...
-}
-```
-
-Connection handles use shared ownership to ensure connections are properly managed even when handlers go out of scope.
+- **Direct**: The default policy. Handlers execute in the thread that emits the signal.
+- **Blocking**: Ensures all handlers complete before the emission function returns.
 
 ## ArgumentPack
 
 The `ArgumentPack` class provides a type-safe container for passing arbitrary arguments with signals:
 
 ```cpp
-// Creating an ArgumentPack
+// Creating and populating an ArgumentPack (verbose way)
 ArgumentPack args;
 args.add<std::string>("filename.txt");
 args.add<int>(42);
 args.add<double>(3.14159);
 
+// Creating ArgumentPack with variadic constructor (concise way)
+ArgumentPack args("filename.txt", 42, 3.14159);
+
 // Retrieving values by index and type
 std::string filename = args.get<std::string>(0);
 int count = args.get<int>(1);
 double value = args.get<double>(2);
-
-// Getting the number of arguments
-size_t numArgs = args.size();
-
-// Checking if empty
-bool isEmpty = args.empty();
-
-// Cloning an ArgumentPack (deep copy)
-ArgumentPack copy = args.clone();
 ```
 
-## Signal Creation and Connection
+## Thread Safety Guarantees
 
-The SignalSlot system uses string names for signals, allowing for dynamic signal management:
+The SignalSlot system provides the following thread safety guarantees:
 
-```cpp
-// Creating signals
-createSimpleSignal("eventA");  // Simple notification
-createDataSignal("eventB");    // With arguments
+- **Connection Safety**: Multiple threads can safely connect to signals concurrently
+- **Emission Safety**: Multiple threads can safely emit signals concurrently
+- **Snapshot Approach**: Signal emission takes a snapshot of active connections, allowing handlers to execute without holding locks
+- **Handler Independence**: Handlers execute in the thread that emits the signal (by default)
+- **Resource Protection**: All shared resources are protected by appropriate mutexes
+- **No Handler Locks**: Locks are released before handler execution to avoid deadlocks
 
-// Connecting to signals with free functions
-connectSimple("eventA", []() { 
-    std::cout << "Event A occurred" << std::endl; 
-});
+## Usage Examples
 
-connectData("eventB", [](const ArgumentPack& args) {
-    std::string msg = args.get<std::string>(0);
-    std::cout << "Event B occurred: " << msg << std::endl;
-});
-
-// Connecting to signals with member functions
-connectSimple("eventA", this, &MyClass::handleEventA);
-connectData("eventB", this, &MyClass::handleEventB);
-```
-
-## Signal Emission
-
-Signals are emitted by name, with appropriate arguments for data signals:
+### Basic Signal Creation and Connection
 
 ```cpp
-// Emitting a simple signal
-emit("eventA");
-
-// Emitting a data signal
-ArgumentPack args;
-args.add<std::string>("Important message");
-args.add<int>(42);
-emit("eventB", args);
-
-// Convenience method for string argument
-emitString("eventB", "Simple message");
-```
-
-## Best Practices
-
-1. **Signal Naming**: Use descriptive signal names that clearly indicate the event
-2. **Error Handling**: Always handle exceptions when processing slots to prevent one handler from breaking others
-3. **Connection Management**: Store connection handles for connections that need to be disconnected later
-4. **Documentation**: Document the signals provided by a class, including their names and argument types
-5. **Thread Safety**: Be aware that SignalSlot is not inherently thread-safe; add synchronization if needed
-6. **Resource Management**: Disconnect signals when objects are destroyed to prevent dangling references
-7. **Signal Granularity**: Create focused signals for specific events rather than overloading a single signal
-8. **Consistency**: Maintain consistent argument order in ArgumentPack for each signal
-
-## Inheritance and Extension
-
-SignalSlot is designed to be inherited by classes that need to provide signal functionality:
-
-```cpp
-class MyComponent : public SignalSlot {
+// Class that uses signals
+class DataProcessor : public SignalSlot {
 public:
-    MyComponent() {
-        // Create signals during construction
-        createSimpleSignal("initialized");
-        createDataSignal("stateChanged");
+    DataProcessor() {
+        // Create signals for various events
+        createSignal("started");
+        createSignal("progress");
+        createSignal("finished");
+        createSignal("error");
     }
     
-    void initialize() {
-        // Implementation...
-        emit("initialized");
-    }
-    
-    void setState(int newState) {
-        int oldState = m_state;
-        m_state = newState;
+    void processData(const std::vector<double>& data) {
+        emit("started");
         
-        // Notify about state change
-        ArgumentPack args;
-        args.add<int>(oldState);
-        args.add<int>(newState);
-        emit("stateChanged", args);
+        try {
+            for (size_t i = 0; i < data.size(); ++i) {
+                // Process data...
+                double value = data[i] * 2;
+                
+                // Report progress (thread-safe)
+                emit("progress", ArgumentPack(static_cast<float>(i + 1) / data.size(), value));
+            }
+            
+            emit("finished");
+        } catch (const std::exception& e) {
+            emitString("error", e.what());
+        }
+    }
+};
+```
+
+### Multi-threaded Usage
+
+```cpp
+// Shared component accessed from multiple threads
+class SharedResource : public SignalSlot {
+public:
+    SharedResource() {
+        createSignal("dataChanged");
+        createSignal("stateChanged");
+    }
+    
+    void updateData(const std::string& key, int value) {
+        // Thread-safe signal emission
+        emit("dataChanged", ArgumentPack(key, value));
+    }
+};
+
+// Using the shared resource from multiple threads
+void threadedExample() {
+    auto resource = std::make_shared<SharedResource>();
+    
+    // Setup handlers
+    resource->connect("dataChanged", [](const ArgumentPack& args) {
+        std::string key = args.get<std::string>(0);
+        int value = args.get<int>(1);
+        std::cout << "Data changed: " << key << " = " << value << std::endl;
+    });
+    
+    // Thread 1: Updates data
+    std::thread t1([resource]() {
+        for (int i = 0; i < 10; i++) {
+            resource->updateData("counter", i);
+            std::this_thread::sleep_for(std::chrono::milliseconds(50));
+        }
+    });
+    
+    // Thread 2: Also updates data
+    std::thread t2([resource]() {
+        for (int i = 10; i < 20; i++) {
+            resource->updateData("value", i * 2);
+            std::this_thread::sleep_for(std::chrono::milliseconds(30));
+        }
+    });
+    
+    t1.join();
+    t2.join();
+}
+```
+
+### Using Synchronization Policies
+
+```cpp
+// Using different synchronization policies
+void syncPolicyExample(SignalSlot& sender) {
+    // Setup a signal
+    sender.createSignal("event");
+    
+    // Connect a slow handler
+    sender.connect("event", []() {
+        std::cout << "Handler started" << std::endl;
+        std::this_thread::sleep_for(std::chrono::seconds(1));
+        std::cout << "Handler finished" << std::endl;
+    });
+    
+    // Direct emission (returns immediately, handler runs in background)
+    std::cout << "Direct emission..." << std::endl;
+    sender.emit("event", SyncPolicy::Direct);
+    std::cout << "Direct emission returned" << std::endl;
+    
+    std::this_thread::sleep_for(std::chrono::seconds(2));
+    
+    // Blocking emission (waits for handler to complete)
+    std::cout << "Blocking emission..." << std::endl;
+    sender.emit("event", SyncPolicy::Blocking);
+    std::cout << "Blocking emission returned" << std::endl;
+}
+```
+
+## Best Practices for Thread-Safe Usage
+
+1. **Handler Deadlock Prevention**: Avoid calling back into the emitting object from handlers, as this can cause deadlocks.
+   ```cpp
+   // Avoid this pattern
+   void onSignal(const ArgumentPack& args) {
+       // DON'T call methods that emit signals on the original emitter
+       // as this could cause deadlocks or recursive locks
+       emitter->doSomethingThatEmitsSignals();
+   }
+   ```
+
+2. **Resource Locking**: Don't hold locks when connecting to or emitting signals.
+   ```cpp
+   void threadSafeMethod() {
+       std::lock_guard<std::mutex> lock(m_mutex);
+       
+       // Bad: Holding a lock while emitting a signal
+       emit("signal"); // Could lead to deadlocks
+       
+       // Better: Release the lock before emitting
+   }
+   
+   void betterMethod() {
+       // Do protected work
+       std::string result;
+       {
+           std::lock_guard<std::mutex> lock(m_mutex);
+           result = m_protectedResource;
+       }
+       
+       // Now emit without holding the lock
+       emitString("dataReady", result);
+   }
+   ```
+
+3. **Thread Confinement**: For simplicity, consider confining signals and slots to specific threads.
+   ```cpp
+   // UI thread handler
+   component->connect("uiUpdate", [this]() {
+       // Only update UI from the UI thread
+       if (isUiThread()) {
+           updateUi();
+       } else {
+           // Queue for execution on UI thread
+           queueOnUiThread([this]() { updateUi(); });
+       }
+   });
+   ```
+
+4. **Connection Management**: Store and manage connection handles for proper lifecycle management.
+   ```cpp
+   class Component {
+   private:
+       std::vector<ConnectionHandle> m_connections;
+       
+   public:
+       void connect(SignalSlot* signaler) {
+           m_connections.push_back(signaler->connect("signal", [this]() {
+               handleSignal();
+           }));
+       }
+       
+       ~Component() {
+           // Properly disconnect all connections
+           for (auto& conn : m_connections) {
+               if (conn && conn->connected()) {
+                   conn->disconnect();
+               }
+           }
+       }
+   };
+   ```
+
+5. **Thread-Safe Handler Design**: Ensure handlers themselves are thread-safe.
+   ```cpp
+   // Thread-safe handler
+   sharedObject->connect("dataChanged", [](const ArgumentPack& args) {
+       static std::mutex handlerMutex;
+       std::lock_guard<std::mutex> lock(handlerMutex);
+       
+       // Now safely access shared resources
+       processData(args);
+   });
+   ```
+
+## Advanced Techniques
+
+### Thread-Safe Static Signals
+
+Create static signals accessible from multiple threads:
+
+```cpp
+class GlobalEvents {
+private:
+    static std::mutex s_mutex;
+    static std::map<std::string, std::shared_ptr<Signal>> s_signals;
+    
+public:
+    static bool createSignal(const std::string& name) {
+        std::lock_guard<std::mutex> lock(s_mutex);
+        if (s_signals.find(name) != s_signals.end())
+            return false;
+        s_signals[name] = std::make_shared<Signal>();
+        return true;
+    }
+    
+    template <typename Func>
+    static ConnectionHandle connect(const std::string& name, Func&& slot) {
+        std::lock_guard<std::mutex> lock(s_mutex);
+        auto it = s_signals.find(name);
+        if (it == s_signals.end())
+            return nullptr;
+        return it->second->connect(std::forward<Func>(slot));
+    }
+    
+    static void emit(const std::string& name) {
+        std::shared_ptr<Signal> signal;
+        {
+            std::lock_guard<std::mutex> lock(s_mutex);
+            auto it = s_signals.find(name);
+            if (it == s_signals.end())
+                return;
+            signal = it->second;
+        }
+        signal->emit();
+    }
+};
+```
+
+### Thread-Pool Handler Execution
+
+For more control, implement a thread pool executor:
+
+```cpp
+class ThreadPoolExecutor {
+private:
+    std::vector<std::thread> m_threads;
+    std::queue<std::function<void()>> m_tasks;
+    std::mutex m_mutex;
+    std::condition_variable m_condition;
+    bool m_stop;
+    
+public:
+    ThreadPoolExecutor(size_t numThreads) : m_stop(false) {
+        for (size_t i = 0; i < numThreads; ++i) {
+            m_threads.emplace_back([this] {
+                workerThread();
+            });
+        }
+    }
+    
+    ~ThreadPoolExecutor() {
+        {
+            std::lock_guard<std::mutex> lock(m_mutex);
+            m_stop = true;
+        }
+        m_condition.notify_all();
+        for (auto& thread : m_threads) {
+            thread.join();
+        }
+    }
+    
+    void execute(std::function<void()> task) {
+        {
+            std::lock_guard<std::mutex> lock(m_mutex);
+            m_tasks.push(std::move(task));
+        }
+        m_condition.notify_one();
     }
     
 private:
-    int m_state = 0;
+    void workerThread() {
+        while (true) {
+            std::function<void()> task;
+            {
+                std::unique_lock<std::mutex> lock(m_mutex);
+                m_condition.wait(lock, [this] {
+                    return m_stop || !m_tasks.empty();
+                });
+                
+                if (m_stop && m_tasks.empty())
+                    return;
+                    
+                task = std::move(m_tasks.front());
+                m_tasks.pop();
+            }
+            
+            task();
+        }
+    }
+};
+
+// Usage with SignalSlot
+class ThreadPoolSignalExecutor : public SignalSlot {
+private:
+    ThreadPoolExecutor m_executor;
+    
+public:
+    ThreadPoolSignalExecutor(size_t numThreads) 
+        : m_executor(numThreads) {}
+    
+    // Execute signal handlers in the thread pool
+    void executeInThreadPool(const std::string& name) {
+        auto signal = getSignal(name);
+        if (!signal) return;
+        
+        m_executor.execute([signal]() {
+            signal->emit();
+        });
+    }
 };
 ```
 
 ## Performance Considerations
 
-- Signal emission has O(n) complexity where n is the number of connected slots
-- Connections use weak pointers internally to allow automatic cleanup
-- Disconnected slots are removed lazily during signal emission
-- ArgumentPack uses type erasure which involves dynamic allocation for arguments
-- String-based signal lookup adds a small overhead compared to direct signal objects
+- **Mutex Overhead**: Thread safety adds some overhead due to mutex locking
+- **Snapshot Approach**: Taking connection snapshots adds memory overhead but prevents deadlocks
+- **Emission Cost**: Scales linearly with the number of connected slots
+- **Lock Contention**: High-frequency signals from multiple threads can cause lock contention
+- **Memory Usage**: Weak pointer usage helps manage memory but requires periodic cleanup
 
 ## Implementation Details
 
-- Slots are wrapped in `std::function` objects for type erasure
-- Signal implementations use vectors of weak pointers to connection objects
-- Dead connections are automatically pruned during signal emission
-- SignalSlot uses `std::cerr` by default for error reporting, but this can be changed
-- ArgumentPack manages type information and storage using a type-erased container
-- Connection handles use shared ownership to manage connection lifetime
+- **Thread Synchronization**: Uses mutexes and atomic variables for thread-safe state
+- **Connection Snapshots**: Takes snapshots of active connections before calling handlers to avoid deadlocks
+- **Lock-Free Execution**: Handlers execute without holding locks
+- **Type Detection**: Uses template metaprogramming for compile-time handler type detection
+- **Atomic Connection State**: Uses atomic variables for thread-safe connection state checks
+- **Safe Disconnection**: Ensures proper cleanup of connections even during concurrent emissions

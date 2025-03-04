@@ -33,7 +33,7 @@ unsigned int ThreadPool::maxThreadCount() {
 
 ThreadPool::ThreadPool(bool verbose) : m_verbose(verbose) {
     // Create a data signal for thread pool statistics
-    createDataSignal("stats");
+    createSignal("stats");
 }
 
 unsigned int ThreadPool::size() const {
@@ -48,13 +48,13 @@ void ThreadPool::add(std::unique_ptr<Runnable> runnable) {
     if (runnable) {
         // Forward log signals from the runnable to this ThreadPool using
         // lambdas
-        runnable->connectData("log", [this](const ArgumentPack &args) {
+        runnable->connect("log", [this](const ArgumentPack &args) {
             this->emit("log", args);
         });
-        runnable->connectData("warn", [this](const ArgumentPack &args) {
+        runnable->connect("warn", [this](const ArgumentPack &args) {
             this->emit("warn", args);
         });
-        runnable->connectData("error", [this](const ArgumentPack &args) {
+        runnable->connect("error", [this](const ArgumentPack &args) {
             this->emit("error", args);
         });
 
@@ -128,25 +128,25 @@ void ThreadPool::connectLoggerToAll(Task *logger) {
     // Use lambda functions to properly forward signals to the logger
 
     // Connect the logger to the ThreadPool
-    connectData("log", [logger](const ArgumentPack &args) {
+    connect("log", [logger](const ArgumentPack &args) {
         logger->emit("log", args);
     });
-    connectData("warn", [logger](const ArgumentPack &args) {
+    connect("warn", [logger](const ArgumentPack &args) {
         logger->emit("warn", args);
     });
-    connectData("error", [logger](const ArgumentPack &args) {
+    connect("error", [logger](const ArgumentPack &args) {
         logger->emit("error", args);
     });
 
     // Connect the logger to each Runnable
     for (const auto &runnable : m_runnables) {
-        runnable->connectData("log", [logger](const ArgumentPack &args) {
+        runnable->connect("log", [logger](const ArgumentPack &args) {
             logger->emit("log", args);
         });
-        runnable->connectData("warn", [logger](const ArgumentPack &args) {
+        runnable->connect("warn", [logger](const ArgumentPack &args) {
             logger->emit("warn", args);
         });
-        runnable->connectData("error", [logger](const ArgumentPack &args) {
+        runnable->connect("error", [logger](const ArgumentPack &args) {
             logger->emit("error", args);
         });
     }

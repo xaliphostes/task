@@ -72,7 +72,7 @@ void Logger::createSignalsFor(Task *task) {
 
     const std::vector<std::string> signals = {"log", "warn", "error"};
     for (const auto &signal : signals) {
-        task->createDataSignal(signal);
+        task->createSignal(signal);
     }
 }
 
@@ -82,9 +82,9 @@ void Logger::connectAllSignalsTo(Task *task) {
         return;
 
     // Connexion des signaux individuels
-    task->connectData("log", this, &Logger::log);
-    task->connectData("warn", this, &Logger::warn);
-    task->connectData("error", this, &Logger::error);
+    task->connect("log", this, &Logger::log);
+    task->connect("warn", this, &Logger::warn);
+    task->connect("error", this, &Logger::error);
 }
 
 // Surcharge pour connecter à un vecteur de tâches

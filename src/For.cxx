@@ -30,7 +30,7 @@ ForParameters::ForParameters(int start_, int stop_, int step_)
 
 For::For(const ForParameters &params)
     : m_start(0), m_stop(10), m_step(1), m_current(0) {
-    createDataSignal("tick"); // This line is likely missing!
+    createSignal("tick"); // This line is likely missing!
     set(params);
 }
 

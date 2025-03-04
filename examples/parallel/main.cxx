@@ -24,11 +24,9 @@ class ProcessingAlgorithm : public ParallelAlgorithm {
             const auto &jobData = std::any_cast<const JobData &>(job);
 
             // Log job information
-            ArgumentPack logArgs;
-            logArgs.add<std::string>("Processing job #" +
-                                     std::to_string(jobData.id) + ": " +
-                                     jobData.name);
-            emit("log", logArgs);
+            emit("log",
+                 ArgumentPack("Processing job #" + std::to_string(jobData.id) +
+                              ": " + jobData.name));
 
             // Simulate processing time
             std::this_thread::sleep_for(
@@ -43,21 +41,16 @@ class ProcessingAlgorithm : public ParallelAlgorithm {
                 }
 
                 float progress = static_cast<float>(i) / 5.0f;
-                ArgumentPack progressArgs;
-                progressArgs.add<int>(jobData.id);
-                progressArgs.add<float>(progress);
-                emit("progress", progressArgs);
+                emit("progress", ArgumentPack(jobData.id, progress));
 
                 std::this_thread::sleep_for(
                     std::chrono::milliseconds(jobData.processingTime / 5));
             }
 
             // Log completion
-            ArgumentPack completeArgs;
-            completeArgs.add<std::string>("Completed job #" +
-                                          std::to_string(jobData.id) + ": " +
-                                          jobData.name);
-            emit("log", completeArgs);
+            emit("log",
+                 ArgumentPack("Completed job #" + std::to_string(jobData.id) +
+                              ": " + jobData.name));
         } catch (const std::bad_any_cast &e) {
             emitString("error",
                        "Invalid job data type: " + std::string(e.what()));
@@ -74,7 +67,7 @@ int main() {
     Chronometer chrono;
 
     // Setup chronometer timing reporting
-    chrono.connectData("timing", [](const ArgumentPack &args) {
+    chrono.connect("timing", [](const ArgumentPack &args) {
         int64_t time = args.get<int64_t>(0);
         std::cout << "Operation took " << time << " ms" << std::endl;
     });
@@ -86,7 +79,7 @@ int main() {
     logger.connectAllSignalsTo(&processor);
 
     // Connect signals for progress reporting
-    processor.connectData("progress", [](const ArgumentPack &args) {
+    processor.connect("progress", [](const ArgumentPack &args) {
         int jobId = args.get<int>(0);
         float progress = args.get<float>(1);
         std::cout << "Job #" << jobId << " progress: " << (progress * 100)
@@ -94,15 +87,15 @@ int main() {
     });
 
     // Connect to algorithm's started and finished signals
-    processor.connectSimple(
-        "started", []() { std::cout << "Algorithm started" << std::endl; });
+    processor.connect("started",
+                      []() { std::cout << "Algorithm started" << std::endl; });
 
-    processor.connectSimple(
-        "finished", []() { std::cout << "Algorithm finished" << std::endl; });
+    processor.connect("finished",
+                      []() { std::cout << "Algorithm finished" << std::endl; });
 
     // Connect chronometer to processor
-    processor.connectSimple("started", &chrono, &Chronometer::start);
-    processor.connectSimple("finished", [&chrono]() { chrono.stop(); });
+    processor.connect("started", &chrono, &Chronometer::start);
+    processor.connect("finished", [&chrono]() { chrono.stop(); });
 
     // Create and add some jobs
     for (int i = 1; i <= 5; i++) {

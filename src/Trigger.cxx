@@ -23,6 +23,6 @@
 
 #include <task/Trigger.h>
 
-Trigger::Trigger() { createSimpleSignal("tick"); }
+Trigger::Trigger() { createSignal("tick"); }
 
 void Trigger::tick() { emit("tick"); }

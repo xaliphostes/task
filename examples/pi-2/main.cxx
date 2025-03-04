@@ -12,7 +12,7 @@ class PiWorker : public Runnable {
         : m_points(points), m_seed(seed), m_result(result) {
         // Create a progress signal if not already created by the parent class
         if (!hasSignal("progress_update")) {
-            createDataSignal("progress_update");
+            createSignal("progress_update");
         }
     }
 
@@ -27,9 +27,8 @@ class PiWorker : public Runnable {
         for (size_t i = 0; i < m_points; ++i) {
             // Check if stop was requested
             if (stopRequested()) {
-                ArgumentPack args;
-                args.add<std::string>("Worker calculation stopped by request");
-                emit("warn", args);
+                emit("warn",
+                     ArgumentPack("Worker calculation stopped by request"));
                 return;
             }
 
@@ -47,11 +46,7 @@ class PiWorker : public Runnable {
                 reportProgress(progress);
 
                 // Also emit detailed progress info
-                ArgumentPack progressArgs;
-                progressArgs.add<size_t>(i);
-                progressArgs.add<size_t>(m_points);
-                progressArgs.add<float>(progress);
-                emit("progress_update", progressArgs);
+                emit("progress_update", ArgumentPack(i, m_points, progress));
             }
         }
 
@@ -59,11 +54,10 @@ class PiWorker : public Runnable {
         m_result.store(m_result.load() + static_cast<double>(insideCircle));
 
         // Report completion
-        ArgumentPack completeArgs;
-        completeArgs.add<std::string>(
-            "Worker completed with " + std::to_string(insideCircle) +
-            " points inside circle out of " + std::to_string(m_points));
-        emit("log", completeArgs);
+        emit("log", ArgumentPack("Worker completed with " +
+                                 std::to_string(insideCircle) +
+                                 " points inside circle out of " +
+                                 std::to_string(m_points)));
     }
 
   private:
@@ -76,9 +70,9 @@ class PiCalculator : public Task {
   public:
     PiCalculator() {
         // Create signals for the calculator
-        createSimpleSignal("calculation_started");
-        createSimpleSignal("calculation_finished");
-        createDataSignal("result");
+        createSignal("calculation_started");
+        createSignal("calculation_finished");
+        createSignal("result");
     }
 
     double calculate(size_t totalPoints = 1000000) {
@@ -87,22 +81,20 @@ class PiCalculator : public Task {
         std::atomic<double> result{0.0};
 
         // Connect pool signals to this calculator for forwarding
-        pool.connectData(
-            "log", [this](const ArgumentPack &args) { emit("log", args); });
+        pool.connect("log",
+                     [this](const ArgumentPack &args) { emit("log", args); });
 
-        pool.connectData(
-            "warn", [this](const ArgumentPack &args) { emit("warn", args); });
+        pool.connect("warn",
+                     [this](const ArgumentPack &args) { emit("warn", args); });
 
-        pool.connectData(
-            "error", [this](const ArgumentPack &args) { emit("error", args); });
+        pool.connect("error",
+                     [this](const ArgumentPack &args) { emit("error", args); });
 
         // Détermine le nombre de points par thread
         size_t numThreads = pool.maxThreadCount();
 
-        ArgumentPack logArgs;
-        logArgs.add<std::string>("Using " + std::to_string(numThreads) +
-                                 " cores");
-        emit("log", logArgs);
+        emit("log",
+             ArgumentPack("Using " + std::to_string(numThreads) + " cores"));
 
         size_t pointsPerThread = totalPoints / numThreads;
 
@@ -118,23 +110,16 @@ class PiCalculator : public Task {
             auto worker = pool.createAndAdd<PiWorker>(points, i, result);
 
             // Connect worker signals to this calculator
-            worker->connectData(
+            worker->connect(
                 "log", [this](const ArgumentPack &args) { emit("log", args); });
 
-            worker->connectData(
-                "progress_update",
-                [this, i, numThreads](const ArgumentPack &args) {
-                    // Forward detailed progress per worker
-                    ArgumentPack workerArgs;
-                    workerArgs.add<size_t>(i);          // Worker index
-                    workerArgs.add<size_t>(numThreads); // Total workers
-                    workerArgs.add<size_t>(
-                        args.get<size_t>(0)); // Current point
-                    workerArgs.add<size_t>(args.get<size_t>(1)); // Total points
-                    workerArgs.add<float>(
-                        args.get<float>(2)); // Progress percentage
-                    emit("worker_progress", workerArgs);
-                });
+            worker->connect("progress_update", [this, i, numThreads](
+                                                   const ArgumentPack &args) {
+                // Forward detailed progress per worker
+                emit("worker_progress",
+                     ArgumentPack(i, numThreads, args.get<size_t>(0),
+                                  args.get<size_t>(1), args.get<float>(2)));
+            });
         }
 
         // Signal start
@@ -149,10 +134,7 @@ class PiCalculator : public Task {
         // Calcule le pi final
         double pi = (result / static_cast<double>(totalPoints)) * 4.0;
 
-        // Report result
-        ArgumentPack resultArgs;
-        resultArgs.add<double>(pi);
-        emit("result", resultArgs);
+        emit("result", ArgumentPack(pi));
 
         // Signal completion
         emit("calculation_finished");
@@ -172,17 +154,16 @@ int main() {
     logger->connectAllSignalsTo(calculator.get());
 
     // Connect chronometer to calculator events
-    calculator->connectSimple("calculation_started",
-                              [chrono]() { chrono->start(); });
+    calculator->connect("calculation_started", [chrono]() { chrono->start(); });
 
-    calculator->connectSimple("calculation_finished", [chrono]() {
+    calculator->connect("calculation_finished", [chrono]() {
         double elapsed = chrono->stop() / 1000.0; // Conversion en secondes
         std::cout << "Calculation took " << elapsed << " seconds" << std::endl;
     });
 
     // Connect to receive the result
     double pi_result = 0.0;
-    calculator->connectData("result", [&pi_result](const ArgumentPack &args) {
+    calculator->connect("result", [&pi_result](const ArgumentPack &args) {
         pi_result = args.get<double>(0);
     });
 

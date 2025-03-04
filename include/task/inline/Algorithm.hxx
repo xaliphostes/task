@@ -28,7 +28,7 @@
 inline Algorithm::Algorithm()
     : m_dirty(true), m_stopRequested(false), m_isRunning(false) {
     // Add a progress signal that takes a float parameter
-    createDataSignal("progress");
+    createSignal("progress");
 }
 
 inline bool Algorithm::stopRequested() const { return m_stopRequested; }

@@ -31,9 +31,7 @@ class TestFlowAlgorithm : public FlowAlgorithm {
 
         for (const auto &job : m_jobs) {
             if (stopRequested()) {
-                ArgumentPack args;
-                args.add<std::string>("Execution stopped by request");
-                emit("warn", args);
+                emit("warn", ArgumentPack("Execution stopped by request"));
                 break;
             }
 
@@ -62,9 +60,8 @@ class TestFlowAlgorithm : public FlowAlgorithm {
                                   std::to_string(value));
             emit("log", args);
         } catch (const std::bad_any_cast &e) {
-            ArgumentPack args;
-            args.add<std::string>("Invalid job type: " + std::string(e.what()));
-            emit("error", args);
+            emit("error",
+                 ArgumentPack("Invalid job type: " + std::string(e.what())));
         }
     }
 
@@ -197,12 +194,12 @@ TEST(FlowAlgorithm, SignalEmissions) {
     FlowSignalCatcher catcher;
 
     // Connect signals
-    flow.connectSimple("started", &catcher, &FlowSignalCatcher::onStarted);
-    flow.connectSimple("finished", &catcher, &FlowSignalCatcher::onFinished);
-    flow.connectData("log", &catcher, &FlowSignalCatcher::onLog);
-    flow.connectData("error", &catcher, &FlowSignalCatcher::onError);
-    flow.connectData("warn", &catcher, &FlowSignalCatcher::onWarning);
-    flow.connectData("progress", &catcher, &FlowSignalCatcher::onProgress);
+    flow.connect("started", &catcher, &FlowSignalCatcher::onStarted);
+    flow.connect("finished", &catcher, &FlowSignalCatcher::onFinished);
+    flow.connect("log", &catcher, &FlowSignalCatcher::onLog);
+    flow.connect("error", &catcher, &FlowSignalCatcher::onError);
+    flow.connect("warn", &catcher, &FlowSignalCatcher::onWarning);
+    flow.connect("progress", &catcher, &FlowSignalCatcher::onProgress);
 
     // Add jobs
     flow.addJob(std::any(10));
@@ -235,7 +232,7 @@ TEST(FlowAlgorithm, ErrorHandling) {
     FlowSignalCatcher catcher;
 
     // Connect error signal
-    flow.connectData("error", &catcher, &FlowSignalCatcher::onError);
+    flow.connect("error", &catcher, &FlowSignalCatcher::onError);
 
     // Add jobs with mixed types
     flow.addJob(std::any(1));                           // Correct type
@@ -262,7 +259,7 @@ TEST(FlowAlgorithm, StopExecution) {
     FlowSignalCatcher catcher;
 
     // Connect signals
-    flow.connectData("warn", &catcher, &FlowSignalCatcher::onWarning);
+    flow.connect("warn", &catcher, &FlowSignalCatcher::onWarning);
 
     // Add many jobs
     for (int i = 0; i < 10; i++) {
@@ -294,8 +291,8 @@ TEST(FlowAlgorithm, AsyncExecution) {
     FlowSignalCatcher catcher;
 
     // Connect signals
-    flow.connectSimple("started", &catcher, &FlowSignalCatcher::onStarted);
-    flow.connectSimple("finished", &catcher, &FlowSignalCatcher::onFinished);
+    flow.connect("started", &catcher, &FlowSignalCatcher::onStarted);
+    flow.connect("finished", &catcher, &FlowSignalCatcher::onFinished);
 
     // Add jobs
     for (int i = 0; i < 5; i++) {

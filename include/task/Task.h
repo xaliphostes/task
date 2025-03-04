@@ -25,7 +25,20 @@
 #include "SignalSlot.h"
 
 class Task : public SignalSlot {
-public:
+  public:
     Task();
     virtual ~Task() = default;
 };
+
+/**
+ * Helper function to make code more concise
+ * 
+ * Usage:
+ * @code
+ * auto processor = make<DataProcessor>();
+ * @endcode
+ */
+template <typename T, typename... Args>
+std::shared_ptr<T> make(Args &&...args) {
+    return std::make_shared<T>(std::forward<Args>(args)...);
+}

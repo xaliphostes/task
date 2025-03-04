@@ -25,11 +25,11 @@
 
 Task::Task() {
     // Create simple notification signals (no arguments)
-    createSimpleSignal("started");
-    createSimpleSignal("finished");
+    createSignal("started");
+    createSignal("finished");
 
     // Create data signals (with ArgumentPack)
-    createDataSignal("log");
-    createDataSignal("warn");
-    createDataSignal("error");
+    createSignal("log");
+    createSignal("warn");
+    createSignal("error");
 }

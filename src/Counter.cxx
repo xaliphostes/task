@@ -30,9 +30,9 @@ Counter::Counter(int initialValue, std::optional<int> minValue,
     : m_value(initialValue), m_initialValue(initialValue), m_minValue(minValue),
       m_maxValue(maxValue) {
     // Create standard signals
-    createDataSignal("valueChanged"); // Emitted when the value changes
-    createDataSignal("limitReached"); // Emitted when hitting min or max
-    createSimpleSignal("reset");      // Emitted when reset is called
+    createSignal("valueChanged"); // Emitted when the value changes
+    createSignal("limitReached"); // Emitted when hitting min or max
+    createSignal("reset");      // Emitted when reset is called
 
     // Check initial value is within range
     if (!isInRange(m_value)) {

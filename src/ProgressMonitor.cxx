@@ -26,7 +26,7 @@
 #include <task/ProgressMonitor.h>
 
 // Class to monitor and respond to progress events
-ProgressMonitor::ProgressMonitor() { createDataSignal("summary"); }
+ProgressMonitor::ProgressMonitor() { createSignal("summary"); }
 
 void ProgressMonitor::onProgress(const ArgumentPack &args) {
     float progress = args.get<float>(0);

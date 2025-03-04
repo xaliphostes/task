@@ -93,7 +93,7 @@ TEST(Counter, Construction) {
     // Construction with invalid initial value (below min)
     CounterSignalCatcher catcher1;
     Counter c4(-5, 0, 10);
-    c4.connectData("warn", &catcher1, &CounterSignalCatcher::onWarn);
+    c4.connect("warn", &catcher1, &CounterSignalCatcher::onWarn);
 
     // Should have adjusted value to minimum
     EXPECT_EQ(c4.getValue(), 0);
@@ -101,7 +101,7 @@ TEST(Counter, Construction) {
     // Construction with invalid initial value (above max)
     CounterSignalCatcher catcher2;
     Counter c5(15, 0, 10);
-    c5.connectData("warn", &catcher2, &CounterSignalCatcher::onWarn);
+    c5.connect("warn", &catcher2, &CounterSignalCatcher::onWarn);
 
     // Should have adjusted value to maximum
     EXPECT_EQ(c5.getValue(), 10);
@@ -112,13 +112,13 @@ TEST(Counter, Signals) {
     CounterSignalCatcher catcher;
 
     // Connect signals
-    counter.connectData("valueChanged", &catcher,
+    counter.connect("valueChanged", &catcher,
                         &CounterSignalCatcher::onValueChanged);
-    counter.connectData("limitReached", &catcher,
+    counter.connect("limitReached", &catcher,
                         &CounterSignalCatcher::onLimitReached);
-    counter.connectSimple("reset", &catcher, &CounterSignalCatcher::onReset);
-    counter.connectData("log", &catcher, &CounterSignalCatcher::onLog);
-    counter.connectData("warn", &catcher, &CounterSignalCatcher::onWarn);
+    counter.connect("reset", &catcher, &CounterSignalCatcher::onReset);
+    counter.connect("log", &catcher, &CounterSignalCatcher::onLog);
+    counter.connect("warn", &catcher, &CounterSignalCatcher::onWarn);
 
     // Test valueChanged signal
     counter.setValue(7);
@@ -244,7 +244,7 @@ TEST(Counter, RangeLimits) {
 
     // Test invalid limit settings
     CounterSignalCatcher catcher;
-    counter.connectData("warn", &catcher, &CounterSignalCatcher::onWarn);
+    counter.connect("warn", &catcher, &CounterSignalCatcher::onWarn);
 
     // Try to set min > max
     EXPECT_FALSE(counter.setMinValue(15));
@@ -262,7 +262,7 @@ TEST(Counter, AutoAdjustment) {
     Counter counter(5);
     CounterSignalCatcher catcher;
 
-    counter.connectData("valueChanged", &catcher,
+    counter.connect("valueChanged", &catcher,
                         &CounterSignalCatcher::onValueChanged);
 
     // Set max and verify value doesn't change

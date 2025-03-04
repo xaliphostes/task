@@ -37,18 +37,14 @@ class PiCalculator : public ParallelAlgorithm {
                     100;
 
                 // Create ArgumentPack instead of Args
-                ArgumentPack args;
-                args.add<std::string>(
-                    "Progress: " + std::to_string(static_cast<int>(progress)) +
-                    "%");
-                emit("log", args);
+                emit("log",
+                     ArgumentPack("Progress: " +
+                                  std::to_string(static_cast<int>(progress)) +
+                                  "%"));
             }
         } catch (const std::bad_any_cast &e) {
-            // Create ArgumentPack instead of Args
-            ArgumentPack args;
-            args.add<std::string>("Invalid job format: " +
-                                  std::string(e.what()));
-            emit("error", args);
+            emit("error",
+                 ArgumentPack("Invalid job format: " + std::string(e.what())));
         }
     }
 
@@ -67,10 +63,7 @@ class PiCalculator : public ParallelAlgorithm {
         // Calcul final de pi
         m_result = m_result / static_cast<double>(m_totalPoints) * 4.0;
 
-        // Create ArgumentPack instead of Args
-        ArgumentPack logArgs;
-        logArgs.add<std::string>("Final π value: " + std::to_string(m_result));
-        emit("log", logArgs);
+        emit("log", ArgumentPack("Final π value: " + std::to_string(m_result)));
     }
 
   private:
@@ -82,10 +75,7 @@ class PiCalculator : public ParallelAlgorithm {
 
         for (size_t i = 0; i < params.points; ++i) {
             if (stopRequested()) {
-                // Create ArgumentPack instead of Args
-                ArgumentPack args;
-                args.add<std::string>("Calculation stopped by user");
-                emit("warn", args);
+                emit("warn", ArgumentPack("Calculation stopped by user"));
                 return 0.0;
             }
 
@@ -105,10 +95,7 @@ class PiCalculator : public ParallelAlgorithm {
         size_t numCores = std::thread::hardware_concurrency();
         size_t pointsPerJob = m_totalPoints / numCores;
 
-        // Create ArgumentPack instead of Args
-        ArgumentPack args;
-        args.add<std::string>("Using " + std::to_string(numCores) + " cores");
-        emit("log", args);
+        emit("log", ArgumentPack("Using " + std::to_string(numCores) + " cores"));
 
         // Crée un job pour chaque cœur
         for (size_t i = 0; i < numCores; ++i) {
@@ -146,8 +133,8 @@ int main() {
     logger->connectAllSignalsTo(piCalc.get());
 
     // Configuration du chronomètre
-    piCalc->connectSimple("started", [chrono]() { chrono->start(); });
-    piCalc->connectSimple("finished", [chrono]() {
+    piCalc->connect("started", [chrono]() { chrono->start(); });
+    piCalc->connect("finished", [chrono]() {
         double elapsed = chrono->stop() / 1000.0; // Conversion en secondes
         std::cout << "Calculation took " << elapsed << " seconds" << std::endl;
     });

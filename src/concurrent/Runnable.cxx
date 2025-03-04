@@ -25,7 +25,7 @@
 
 Runnable::Runnable() : m_isRunning(false), m_stopRequested(false) {
     // Create progress signal
-    createDataSignal("progress");
+    createSignal("progress");
 }
 
 void Runnable::run() {

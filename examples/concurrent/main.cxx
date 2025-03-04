@@ -74,9 +74,9 @@ int main() {
     pool.connectLoggerToAll(&logger);
 
     // Connect the chronometer to the pool
-    chrono.connectData("timing", &logger, &Logger::log);
-    pool.connectSimple("started", &chrono, &Chronometer::start);
-    pool.connectSimple("finished", [&chrono]() {
+    chrono.connect("timing", &logger, &Logger::log);
+    pool.connect("started", &chrono, &Chronometer::start);
+    pool.connect("finished", [&chrono]() {
         int64_t time = chrono.stop();
         std::cout << "Total execution time: " << time << " ms\n";
     });

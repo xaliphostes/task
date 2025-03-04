@@ -68,11 +68,11 @@ int main() {
     logger->connectAllSignalsTo(counter.get());
 
     // Connect observer to specific counter signals
-    counter->connectData("valueChanged", observer.get(),
+    counter->connect("valueChanged", observer.get(),
                          &CounterObserver::onValueChanged);
-    counter->connectData("limitReached", observer.get(),
+    counter->connect("limitReached", observer.get(),
                          &CounterObserver::onLimitReached);
-    counter->connectSimple("reset", observer.get(), &CounterObserver::onReset);
+    counter->connect("reset", observer.get(), &CounterObserver::onReset);
 
     std::cout << "Initial value: " << counter->getValue() << std::endl;
 

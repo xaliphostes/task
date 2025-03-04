@@ -128,11 +128,11 @@ TEST(For, BasicLoop) {
         std::cout << "Warning: 'tick' signal not found in For class, creating "
                      "it for testing."
                   << std::endl;
-        forLoop.createDataSignal("tick");
+        forLoop.createSignal("tick");
     }
 
     // Connect the catcher to the tick signal of the forLoop
-    forLoop.connectData("tick", &catcher, &ForSignalCatcher::onTick);
+    forLoop.connect("tick", &catcher, &ForSignalCatcher::onTick);
 
     // Run the loop
     forLoop.start();
@@ -154,10 +154,10 @@ TEST(For, CustomStepLoop) {
         std::cout << "Warning: 'tick' signal not found in For class, creating "
                      "it for testing."
                   << std::endl;
-        forLoop.createDataSignal("tick");
+        forLoop.createSignal("tick");
     }
 
-    forLoop.connectData("tick", &catcher, &ForSignalCatcher::onTick);
+    forLoop.connect("tick", &catcher, &ForSignalCatcher::onTick);
 
     forLoop.start();
 
@@ -177,10 +177,10 @@ TEST(For, NegativeStepLoop) {
         std::cout << "Warning: 'tick' signal not found in For class, creating "
                      "it for testing."
                   << std::endl;
-        forLoop.createDataSignal("tick");
+        forLoop.createSignal("tick");
     }
 
-    forLoop.connectData("tick", &catcher, &ForSignalCatcher::onTick);
+    forLoop.connect("tick", &catcher, &ForSignalCatcher::onTick);
 
     forLoop.start();
 
@@ -197,18 +197,18 @@ TEST(For, ZeroStepLoop) {
 
     // Ensure signals exist
     if (!forLoop.hasSignal("tick")) {
-        forLoop.createDataSignal("tick");
+        forLoop.createSignal("tick");
     }
     if (!forLoop.hasSignal("warn")) {
-        forLoop.createDataSignal("warn");
+        forLoop.createSignal("warn");
     }
 
-    forLoop.connectData("tick", &catcher, &ForSignalCatcher::onTick);
+    forLoop.connect("tick", &catcher, &ForSignalCatcher::onTick);
 
     // This should be an infinite loop if we actually ran it, so let's not do
     // that Instead, let's verify that a warning signal is emitted
     bool warningEmitted = false;
-    forLoop.connectData("warn", [&warningEmitted](const ArgumentPack &args) {
+    forLoop.connect("warn", [&warningEmitted](const ArgumentPack &args) {
         warningEmitted = true;
     });
 
@@ -218,9 +218,8 @@ TEST(For, ZeroStepLoop) {
     if (safeModeEnabled) {
         // Mock the test instead of running potentially dangerous code
         if (forLoop.stepValue() == 0) {
-            ArgumentPack warningArgs;
-            warningArgs.add<std::string>("Bad configuration of the ForLoop");
-            forLoop.emit("warn", warningArgs);
+            forLoop.emit("warn",
+                         ArgumentPack("Bad configuration of the ForLoop"));
         }
     } else {
         // Only run this if you're confident the For class handles zero step
@@ -239,16 +238,16 @@ TEST(For, EmptyRange) {
 
     // Ensure signals exist
     if (!forLoop.hasSignal("tick")) {
-        forLoop.createDataSignal("tick");
+        forLoop.createSignal("tick");
     }
     if (!forLoop.hasSignal("warn")) {
-        forLoop.createDataSignal("warn");
+        forLoop.createSignal("warn");
     }
 
-    forLoop.connectData("tick", &catcher, &ForSignalCatcher::onTick);
+    forLoop.connect("tick", &catcher, &ForSignalCatcher::onTick);
 
     bool warningEmitted = false;
-    forLoop.connectData("warn", [&warningEmitted](const ArgumentPack &args) {
+    forLoop.connect("warn", [&warningEmitted](const ArgumentPack &args) {
         warningEmitted = true;
     });
 
@@ -273,9 +272,7 @@ TEST(For, EmptyRange) {
         std::cout
             << "Warning signal not emitted for invalid range, but should be!"
             << std::endl;
-        ArgumentPack warningArgs;
-        warningArgs.add<std::string>("Bad configuration of the ForLoop");
-        forLoop.emit("warn", warningArgs);
+        forLoop.emit("warn", ArgumentPack("Bad configuration of the ForLoop"));
     }
 
     EXPECT_TRUE(warningEmitted);
@@ -290,10 +287,10 @@ TEST(For, AsyncExecution) {
         std::cout << "Warning: 'tick' signal not found in For class, creating "
                      "it for testing."
                   << std::endl;
-        forLoop.createDataSignal("tick");
+        forLoop.createSignal("tick");
     }
 
-    forLoop.connectData("tick", &catcher, &ForSignalCatcher::onTick);
+    forLoop.connect("tick", &catcher, &ForSignalCatcher::onTick);
 
     // Start the loop asynchronously
     auto future = forLoop.startAsync();
@@ -333,12 +330,12 @@ TEST(For, GetCurrentValue) {
         std::cout << "Warning: 'tick' signal not found in For class, creating "
                      "it for testing."
                   << std::endl;
-        forLoop.createDataSignal("tick");
+        forLoop.createSignal("tick");
     }
 
     // Connect a handler that checks the current value during execution
-    forLoop.connectData("tick", [&forLoop, &midLoopCheckDone,
-                                 &midLoopValue](const ArgumentPack &args) {
+    forLoop.connect("tick", [&forLoop, &midLoopCheckDone,
+                             &midLoopValue](const ArgumentPack &args) {
         int current = args.get<int>(2);
         if (current == 7 && !midLoopCheckDone) {
             midLoopValue = forLoop.getCurrentValue();
@@ -351,13 +348,8 @@ TEST(For, GetCurrentValue) {
     if (!midLoopCheckDone) {
         // Manually simulate setting the current value to 7 if the test is
         // failing This is just for testing getCurrentValue() without relying on
-        // the start() method
-        ArgumentPack mockArgs;
-        mockArgs.add<int>(5);  // start
-        mockArgs.add<int>(10); // stop
-        mockArgs.add<int>(7);  // current
-        mockArgs.add<int>(1);  // step
-
+        // the start() method.
+        //
         // Access protected member through a trick (might not work depending on
         // access control) This is just a fallback in case signal emission
         // doesn't work
@@ -371,7 +363,7 @@ TEST(For, GetCurrentValue) {
                       << std::endl;
         }
 
-        forLoop.emit("tick", mockArgs);
+        forLoop.emit("tick", ArgumentPack(5, 10, 7, 1));
     }
 
     forLoop.start();
@@ -404,7 +396,7 @@ TEST(For, TickSignalParameters) {
         std::cout << "Warning: 'tick' signal not found in For class, creating "
                      "it for testing."
                   << std::endl;
-        forLoop.createDataSignal("tick");
+        forLoop.createSignal("tick");
     }
 
     bool signalReceived = false;
@@ -413,7 +405,7 @@ TEST(For, TickSignalParameters) {
     int receivedCurrent = -1;
     int receivedStep = -1;
 
-    forLoop.connectData("tick", [&](const ArgumentPack &args) {
+    forLoop.connect("tick", [&](const ArgumentPack &args) {
         // Get the first emitted tick only
         if (!signalReceived) {
             // Check if we have all expected parameters
@@ -441,12 +433,8 @@ TEST(For, TickSignalParameters) {
     if (!signalReceived) {
         std::cout << "Emitting a test signal to check connection..."
                   << std::endl;
-        ArgumentPack testArgs;
-        testArgs.add<int>(2); // start
-        testArgs.add<int>(6); // stop
-        testArgs.add<int>(2); // current
-        testArgs.add<int>(2); // step
-        forLoop.emit("tick", testArgs);
+        // start, stop, current, step
+        forLoop.emit("tick", ArgumentPack(2, 6, 2, 2));
     }
 
     // Run the actual For loop

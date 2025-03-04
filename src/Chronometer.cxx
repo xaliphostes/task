@@ -25,7 +25,7 @@
 
 Chronometer::Chronometer() : m_startTime(nullptr) {
     // Create a data signal for timing information
-    createDataSignal("timing");
+    createSignal("timing");
 }
 
 void Chronometer::start() {

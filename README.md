@@ -44,6 +44,8 @@ make test
 
 ## [Documentation in Markdown](docs/index.md)
 
+## [Documentation in html](https://xaliphostes.github.io/task/)
+
 ## Thread-Safe SignalSlot System
 
 The core of this library is the SignalSlot system, which now provides comprehensive thread safety guarantees:

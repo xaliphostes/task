@@ -1,0 +1,712 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TaskQueue - Task Framework Documentation</title>
+    <style>
+        :root {
+            --primary-color: #4a6da7;
+            --secondary-color: #5e81ac;
+            --accent-color: #88c0d0;
+            --text-color: #2e3440;
+            --text-light: #4c566a;
+            --bg-color: #eceff4;
+            --bg-accent: #e5e9f0;
+            --success-color: #a3be8c;
+            --warning-color: #ebcb8b;
+            --error-color: #bf616a;
+            --code-bg: #f8f9fb;
+            --border-color: #d8dee9;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: var(--text-color);
+            background-color: var(--bg-color);
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 30px;
+        }
+
+        h1,
+        h2,
+        h3,
+        h4 {
+            color: var(--primary-color);
+            margin: 1.5rem 0 1rem 0;
+        }
+
+        h1 {
+            font-size: 2.2rem;
+            margin-top: 0;
+            padding-bottom: 10px;
+            border-bottom: 2px solid var(--accent-color);
+        }
+
+        h2 {
+            font-size: 1.8rem;
+        }
+
+        h3 {
+            font-size: 1.3rem;
+            color: var(--secondary-color);
+        }
+
+        h4 {
+            font-size: 1.1rem;
+            color: var(--text-light);
+        }
+
+        p {
+            margin-bottom: 1rem;
+        }
+
+        a {
+            color: var(--primary-color);
+            text-decoration: none;
+        }
+
+        a:hover {
+            text-decoration: underline;
+        }
+
+        .feature-list {
+            margin-left: 20px;
+            margin-bottom: 20px;
+        }
+
+        .feature-list li {
+            margin-bottom: 8px;
+        }
+
+        code {
+            font-family: 'Consolas', 'Monaco', monospace;
+            background-color: var(--code-bg);
+            padding: 2px 4px;
+            border-radius: 3px;
+            font-size: 0.9em;
+            color: var(--secondary-color);
+            border: 1px solid var(--border-color);
+        }
+
+        pre {
+            background-color: var(--code-bg);
+            padding: 15px;
+            border-radius: 5px;
+            overflow-x: auto;
+            margin: 15px 0;
+            border: 1px solid var(--border-color);
+        }
+
+        pre code {
+            background-color: transparent;
+            padding: 0;
+            border: none;
+            font-size: 0.9rem;
+            line-height: 1.5;
+        }
+
+        .table-container {
+            overflow-x: auto;
+            margin: 20px 0;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 1rem;
+        }
+
+        th,
+        td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        thead {
+            background-color: var(--bg-accent);
+        }
+
+        th {
+            font-weight: 600;
+            color: var(--text-light);
+        }
+
+        tr:nth-child(even) {
+            background-color: rgba(229, 233, 240, 0.5);
+        }
+
+        .card {
+            background-color: white;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+            border: 1px solid var(--border-color);
+        }
+
+        .note {
+            background-color: rgba(136, 192, 208, 0.2);
+            border-left: 4px solid var(--accent-color);
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 0 5px 5px 0;
+        }
+
+        .warning {
+            background-color: rgba(235, 203, 139, 0.2);
+            border-left: 4px solid var(--warning-color);
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 0 5px 5px 0;
+        }
+
+        .example-header {
+            background-color: var(--secondary-color);
+            color: white;
+            padding: 10px 15px;
+            border-radius: 5px 5px 0 0;
+            font-weight: 500;
+        }
+
+        .example-content {
+            background-color: var(--code-bg);
+            padding: 15px;
+            border-radius: 0 0 5px 5px;
+            border: 1px solid var(--border-color);
+            border-top: none;
+            margin-bottom: 20px;
+        }
+
+        .section {
+            margin-bottom: 40px;
+        }
+
+        .priority-level {
+            display: inline-block;
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-size: 0.8rem;
+            font-weight: 500;
+            margin-right: 8px;
+            background-color: var(--bg-accent);
+        }
+
+        .priority-level.critical {
+            background-color: rgba(191, 97, 106, 0.3);
+            color: #bf616a;
+        }
+
+        .priority-level.high {
+            background-color: rgba(208, 135, 112, 0.3);
+            color: #d08770;
+        }
+
+        .priority-level.normal {
+            background-color: rgba(235, 203, 139, 0.3);
+            color: #9e7c34;
+        }
+
+        .priority-level.low {
+            background-color: rgba(163, 190, 140, 0.3);
+            color: #4f7942;
+        }
+
+        .priority-level.background {
+            background-color: rgba(136, 192, 208, 0.3);
+            color: #3a7b91;
+        }
+
+        .back-link {
+            display: inline-block;
+            margin-bottom: 15px;
+            font-size: 0.9rem;
+        }
+
+        .back-link:before {
+            content: "←";
+            margin-right: 5px;
+        }
+
+        .inheritance {
+            font-style: italic;
+            margin-bottom: 15px;
+            color: var(--text-light);
+        }
+
+        .toc {
+            background-color: var(--bg-accent);
+            border-radius: 5px;
+            padding: 15px;
+            margin-bottom: 30px;
+        }
+
+        .toc h4 {
+            margin-top: 0;
+            margin-bottom: 10px;
+        }
+
+        .toc ul {
+            list-style-type: none;
+            margin-left: 10px;
+        }
+
+        .toc li {
+            margin-bottom: 5px;
+        }
+
+        .toc a {
+            display: inline-block;
+            padding: 2px 0;
+        }
+    </style>
+</head>
+
+<body>
+    <a href="index.html" class="back-link">Back to Index</a>
+
+    <section class="section">
+        <h1>TaskQueue</h1>
+        <p class="inheritance">Inherits from <a href="task.html">Task</a></p>
+
+        <div class="toc">
+            <h4>Contents</h4>
+            <ul>
+                <li><a href="#overview">Overview</a></li>
+                <li><a href="#features">Features</a></li>
+                <li><a href="#interface">Class Interface</a></li>
+                <li><a href="#priority-levels">Priority Levels</a></li>
+                <li><a href="#signals">Signals</a></li>
+                <li><a href="#usage">Usage Example</a></li>
+                <li><a href="#how-it-works">How It Works</a></li>
+                <li><a href="#thread-safety">Thread Safety</a></li>
+                <li><a href="#best-practices">Best Practices</a></li>
+                <li><a href="#use-cases">Use Cases</a></li>
+            </ul>
+        </div>
+
+        <div id="overview" class="card">
+            <p>The <code>TaskQueue</code> class provides a priority-based task scheduling system for the task library.
+                It enables executing tasks based on their importance level while managing concurrency to optimize system
+                resource utilization. The queue ensures that high-priority tasks execute before lower-priority ones,
+                regardless of their enqueue order.</p>
+            <p>TaskQueue serves as a central execution manager that can handle multiple tasks with different priorities,
+                ensuring critical operations are performed first while limiting the number of simultaneously running
+                tasks to prevent system overload.</p>
+        </div>
+
+        <h2 id="features">Features</h2>
+        <ul class="feature-list">
+            <li><strong>Priority-Based Scheduling:</strong> Tasks are executed according to their priority level</li>
+            <li><strong>Concurrency Control:</strong> Limits the number of simultaneously running tasks</li>
+            <li><strong>Asynchronous Processing:</strong> Runs tasks in separate threads managed by the queue</li>
+            <li><strong>Robust Error Handling:</strong> Captures and reports task failures</li>
+            <li><strong>Comprehensive Status Reporting:</strong> Emits signals for task lifecycle events</li>
+            <li><strong>Dynamic Configuration:</strong> Allows adjusting maximum concurrency during runtime</li>
+            <li><strong>Graceful Shutdown:</strong> Supports clean stopping with optional waiting for tasks</li>
+            <li><strong>Task Management:</strong> Provides methods to add, create, and monitor tasks</li>
+            <li><strong>Type-Safe Task Creation:</strong> Template methods for creating tasks with proper type safety
+            </li>
+        </ul>
+
+        <h2 id="interface">Class Interface</h2>
+        <pre><code>enum class TaskPriority {
+    CRITICAL = 0,  // Highest priority, execute immediately
+    HIGH = 1,      // High priority tasks
+    NORMAL = 2,    // Normal priority tasks
+    LOW = 3,       // Low priority, can wait
+    BACKGROUND = 4 // Lowest priority, run when system is idle
+};
+
+class TaskQueue : public Task {
+public:
+    // Constructor & Destructor
+    TaskQueue(unsigned int maxConcurrentTasks = 1, bool autoStart = true);
+    ~TaskQueue();
+    
+    // Queue control
+    void start();
+    void stop(bool wait = true);
+    void stopAll();
+    
+    // Task management
+    bool enqueue(std::shared_ptr<Runnable> task, 
+                 TaskPriority priority = TaskPriority::NORMAL,
+                 const std::string& description = "");
+    
+    template <typename T, typename... Args>
+    std::shared_ptr<T> createAndEnqueue(TaskPriority priority, 
+                                         const std::string& description, 
+                                         Args&&... args);
+    
+    size_t clearQueue();
+    
+    // Status methods
+    size_t pendingCount() const;
+    size_t activeCount() const;
+    bool isRunning() const;
+    
+    // Configuration
+    void setMaxConcurrentTasks(unsigned int maxTasks);
+    unsigned int getMaxConcurrentTasks() const;
+};</code></pre>
+
+        <h2 id="priority-levels">Priority Levels</h2>
+        <p>TaskQueue supports five priority levels for tasks:</p>
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Priority</th>
+                        <th>Value</th>
+                        <th>Description</th>
+                        <th>Use Cases</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><span class="priority-level critical">CRITICAL</span></td>
+                        <td>0</td>
+                        <td>Highest priority, execute immediately</td>
+                        <td>Error recovery, safety-critical operations, urgent UI updates</td>
+                    </tr>
+                    <tr>
+                        <td><span class="priority-level high">HIGH</span></td>
+                        <td>1</td>
+                        <td>Important tasks with high priority</td>
+                        <td>User-initiated actions, time-sensitive processing</td>
+                    </tr>
+                    <tr>
+                        <td><span class="priority-level normal">NORMAL</span></td>
+                        <td>2</td>
+                        <td>Standard tasks with default priority</td>
+                        <td>Regular background operations, typical workloads</td>
+                    </tr>
+                    <tr>
+                        <td><span class="priority-level low">LOW</span></td>
+                        <td>3</td>
+                        <td>Tasks that can wait if system is busy</td>
+                        <td>Prefetching, precalculations, non-critical updates</td>
+                    </tr>
+                    <tr>
+                        <td><span class="priority-level background">BACKGROUND</span></td>
+                        <td>4</td>
+                        <td>Lowest priority, only run when system is idle</td>
+                        <td>Maintenance, cleanup, indexing, statistics collection</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="note">
+            <strong>Note:</strong> Tasks are always executed in order of priority, regardless of when they were added to
+            the queue. Within the same priority level, tasks are executed in FIFO (First-In, First-Out) order.
+        </div>
+
+        <h2 id="signals">Signals</h2>
+        <p>TaskQueue emits the following signals:</p>
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Signal</th>
+                        <th>Description</th>
+                        <th>Arguments</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><code>taskEnqueued</code></td>
+                        <td>When a task is added to the queue</td>
+                        <td>taskDescription, priorityValue</td>
+                    </tr>
+                    <tr>
+                        <td><code>taskStarted</code></td>
+                        <td>When a task begins execution</td>
+                        <td>taskDescription, priorityValue</td>
+                    </tr>
+                    <tr>
+                        <td><code>taskCompleted</code></td>
+                        <td>When a task completes successfully</td>
+                        <td>taskDescription, priorityValue</td>
+                    </tr>
+                    <tr>
+                        <td><code>taskFailed</code></td>
+                        <td>When a task encounters an error</td>
+                        <td>taskDescription, priorityValue, errorMessage</td>
+                    </tr>
+                    <tr>
+                        <td><code>queueStats</code></td>
+                        <td>When queue statistics are updated</td>
+                        <td>pendingCount, activeCount, maxConcurrentTasks</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <h2 id="usage">Usage Example</h2>
+        <div class="example-header">Creating and Using a TaskQueue</div>
+        <pre class="example-content"><code>// Create a task queue with 3 concurrent tasks
+auto taskQueue = std::make_shared<TaskQueue>(3);
+
+// Connect to queue signals
+taskQueue->connectData("taskCompleted", [](const ArgumentPack& args) {
+    std::string taskName = args.get<std::string>(0);
+    std::cout << "Task completed: " << taskName << std::endl;
+});
+
+taskQueue->connectData("taskFailed", [](const ArgumentPack& args) {
+    std::string taskName = args.get<std::string>(0);
+    std::string errorMsg = args.get<std::string>(2);
+    std::cerr << "Task failed: " << taskName << " - " << errorMsg << std::endl;
+});
+
+taskQueue->connectData("queueStats", [](const ArgumentPack& args) {
+    size_t pending = args.get<size_t>(0);
+    size_t active = args.get<size_t>(1);
+    std::cout << "Queue stats: " << active << " active, " 
+              << pending << " pending" << std::endl;
+});
+
+// Create and enqueue tasks with different priorities
+auto criticalTask = std::make_shared<MyTask>("Critical operation", 1000);
+taskQueue->enqueue(criticalTask, TaskPriority::CRITICAL, "Critical Task");
+
+auto normalTask = std::make_shared<MyTask>("Normal operation", 2000);
+taskQueue->enqueue(normalTask, TaskPriority::NORMAL, "Normal Task");
+
+// Create and enqueue in one step
+auto ioTask = taskQueue->createAndEnqueue<IoTask>(
+    TaskPriority::LOW, 
+    "Background IO Task",
+    "IO operation", 
+    3000
+);
+
+// Wait for completion
+while (taskQueue->activeCount() > 0 || taskQueue->pendingCount() > 0) {
+    std::this_thread::sleep_for(std::chrono::milliseconds(500));
+    std::cout << "Active: " << taskQueue->activeCount() 
+              << ", Pending: " << taskQueue->pendingCount() << std::endl;
+}
+
+// Change concurrency limit dynamically
+taskQueue->setMaxConcurrentTasks(5);
+
+// Stop the queue when done
+taskQueue->stop();</code></pre>
+
+        <div class="example-header">Creating a Custom Task Type</div>
+        <pre class="example-content"><code>// A custom task that can be added to the queue
+class FileProcessorTask : public Runnable {
+public:
+    FileProcessorTask(const std::string& filePath, bool deleteAfter = false) 
+        : m_filePath(filePath), m_deleteAfter(deleteAfter) {}
+    
+protected:
+    // Implement the required runImpl method
+    void runImpl() override {
+        // Signal task start
+        emitString("log", "Starting to process file: " + m_filePath);
+        
+        try {
+            // Simulate file processing with progress updates
+            for (int i = 0; i < 10; ++i) {
+                // Check if we should stop
+                if (stopRequested()) {
+                    emitString("warn", "File processing cancelled");
+                    return;
+                }
+                
+                // Simulate work
+                std::this_thread::sleep_for(std::chrono::milliseconds(100));
+                
+                // Report progress
+                float progress = static_cast<float>(i + 1) / 10.0f;
+                reportProgress(progress);
+                
+                if (i == 5) {
+                    emitString("log", "File processing at 50%");
+                }
+            }
+            
+            // Simulate cleanup if needed
+            if (m_deleteAfter) {
+                emitString("log", "Deleting file: " + m_filePath);
+                // Simulated deletion
+                std::this_thread::sleep_for(std::chrono::milliseconds(50));
+            }
+            
+            emitString("log", "Completed processing file: " + m_filePath);
+        }
+        catch (const std::exception& e) {
+            emitString("error", std::string("Error processing file: ") + e.what());
+            throw; // Re-throw to signal task failure
+        }
+    }
+    
+private:
+    std::string m_filePath;
+    bool m_deleteAfter;
+};
+
+// Usage with TaskQueue
+void processFiles(const std::vector<std::string>& files) {
+    auto queue = std::make_shared<TaskQueue>(2); // Process 2 files at a time
+    
+    // Add files to the queue with different priorities
+    for (size_t i = 0; i < files.size(); ++i) {
+        // Determine priority based on file type or other criteria
+        TaskPriority priority = TaskPriority::NORMAL;
+        if (files[i].ends_with(".urgent")) {
+            priority = TaskPriority::HIGH;
+        }
+        
+        // Create and enqueue the task
+        queue->createAndEnqueue<FileProcessorTask>(
+            priority,
+            "Process " + files[i],
+            files[i],
+            false // Don't delete after processing
+        );
+    }
+    
+    // Wait for all tasks to complete
+    while (queue->pendingCount() > 0 || queue->activeCount() > 0) {
+        std::this_thread::sleep_for(std::chrono::milliseconds(200));
+    }
+    
+    std::cout << "All files processed" << std::endl;
+}</code></pre>
+
+        <h2 id="how-it-works">How It Works</h2>
+        <p>The TaskQueue operates using the following mechanisms:</p>
+
+        <h3>Task Submission</h3>
+        <p>When a task is enqueued:</p>
+        <ul class="feature-list">
+            <li>The task is wrapped in a TaskEntry structure with priority information and description</li>
+            <li>The task is inserted into a priority queue that orders tasks by priority and submission time</li>
+            <li>The taskEnqueued signal is emitted with task details</li>
+        </ul>
+
+        <h3>Processing Thread</h3>
+        <p>A dedicated processing thread handles task execution:</p>
+        <ul class="feature-list">
+            <li>The thread continuously monitors the priority queue for available tasks</li>
+            <li>When capacity is available (active tasks < max concurrent), it dequeues the highest priority task</li>
+            <li>The task is executed in its own thread, detached from the queue processor</li>
+            <li>The taskStarted signal is emitted when execution begins</li>
+        </ul>
+
+        <h3>Concurrency Management</h3>
+        <p>The queue carefully controls execution concurrency:</p>
+        <ul class="feature-list">
+            <li>Tracks active task count and enforces the maximum concurrent limit</li>
+            <li>When tasks complete, the count is decremented and the processor checks for new tasks to start</li>
+            <li>The maximum concurrent task limit can be adjusted dynamically</li>
+        </ul>
+
+        <h3>Task Completion</h3>
+        <p>When a task completes:</p>
+        <ul class="feature-list">
+            <li>Success or failure is detected based on exceptions thrown during execution</li>
+            <li>The appropriate signal (taskCompleted or taskFailed) is emitted</li>
+            <li>The active task count is decremented, allowing new tasks to start</li>
+            <li>Queue statistics are updated and emitted through the queueStats signal</li>
+        </ul>
+
+        <h2 id="thread-safety">Thread Safety</h2>
+        <p>TaskQueue is designed to be thread-safe, allowing multiple threads to interact with it simultaneously:</p>
+        <ul class="feature-list">
+            <li>Access to the internal queue is protected by a mutex</li>
+            <li>Active task counting uses atomic variables for thread-safe operations</li>
+            <li>Thread synchronization uses condition variables for efficient waiting</li>
+            <li>Task execution happens in separate threads, isolated from the queue's control thread</li>
+            <li>Signal emissions are handled in a thread-safe manner</li>
+        </ul>
+
+        <p>Multiple threads can safely call <code>enqueue()</code>, <code>setMaxConcurrentTasks()</code>, and other
+            methods concurrently without explicit synchronization from the caller.</p>
+
+        <div class="warning">
+            <strong>Caution:</strong> When implementing custom Runnable tasks for use with TaskQueue, ensure that your
+            task implementations are thread-safe if they access shared resources.
+        </div>
+
+        <h2 id="best-practices">Best Practices</h2>
+        <ul class="feature-list">
+            <li><strong>Priority Assignment:</strong> Carefully consider the priority level for each task based on its
+                importance and time sensitivity</li>
+            <li><strong>Task Size:</strong> Design tasks to be sufficiently large to justify the overhead of thread
+                management</li>
+            <li><strong>Concurrency Limits:</strong> Set appropriate concurrency limits based on the nature of your
+                tasks and system capabilities</li>
+            <li><strong>Task Descriptions:</strong> Provide meaningful task descriptions to help with debugging and
+                monitoring</li>
+            <li><strong>Resource Management:</strong> Ensure tasks properly release resources even when stopped abruptly
+            </li>
+            <li><strong>Exception Handling:</strong> Handle task-specific exceptions within the task implementation</li>
+            <li><strong>Stop Support:</strong> Implement proper support for stopRequested() in long-running tasks</li>
+            <li><strong>Signal Connections:</strong> Connect to queue signals for monitoring and logging task execution
+            </li>
+            <li><strong>Queue Cleanup:</strong> Call stop() to properly shut down the queue when it's no longer needed
+            </li>
+        </ul>
+
+        <h2 id="use-cases">Use Cases</h2>
+        <p>TaskQueue is particularly useful for:</p>
+        <ul class="feature-list">
+            <li><strong>UI Applications:</strong> Prioritizing UI responsiveness by executing UI updates with higher
+                priority than background work</li>
+            <li><strong>Server Applications:</strong> Managing request processing with different SLA requirements</li>
+            <li><strong>Resource-Constrained Systems:</strong> Limiting concurrent operations to prevent system overload
+            </li>
+            <li><strong>Batch Processing:</strong> Managing multiple jobs with different importance levels</li>
+            <li><strong>Data Processing Pipelines:</strong> Coordinating various processing stages with appropriate
+                priorities</li>
+            <li><strong>Task Scheduling:</strong> Implementing a lightweight scheduler for recurring tasks</li>
+            <li><strong>Download Managers:</strong> Prioritizing downloads based on user preferences or application
+                needs</li>
+            <li><strong>Media Processing:</strong> Organizing media encoding/decoding tasks by importance</li>
+        </ul>
+
+        <h2 id="implementation-details">Implementation Details</h2>
+        <p>Key implementation aspects of the TaskQueue:</p>
+        <ul class="feature-list">
+            <li>Uses a priority queue with a custom comparator for task ordering</li>
+            <li>Employs mutexes and condition variables for thread synchronization</li>
+            <li>Leverages atomic variables for thread-safe state tracking</li>
+            <li>Forwards task signals to queue listeners for centralized monitoring</li>
+            <li>Maintains collections of pending and active tasks</li>
+            <li>Processes tasks asynchronously in separate threads</li>
+            <li>Implements a queue processor thread that coordinates task execution</li>
+            <li>Ensures proper cleanup of all resources during shutdown</li>
+        </ul>
+
+        <h2 id="related-components">Related Components</h2>
+        <p>TaskQueue works well with several other components in the Task Framework:</p>
+        <ul class="feature-list">
+            <li><strong><a href="runnable.html">Runnable</a>:</strong> Base class for all executable tasks in the queue
+            </li>
+            <li><strong><a href="logger.html">Logger</a>:</strong> For capturing and displaying task execution logs</li>
+            <li><strong><a href="chronometer.html">Chronometer</a>:</strong> For measuring task execution time</li>
+            <li><strong><a href="progressmonitor.html">ProgressMonitor</a>:</strong> For tracking progress across
+                multiple tasks</li>
+            <li><strong><a href="taskobserver.html">TaskObserver</a>:</strong> For collecting statistics on task
+                execution</li>
+        </ul>
+    </section>
+</body>
+
+</html>

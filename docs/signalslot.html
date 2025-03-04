@@ -171,6 +171,14 @@
             border-radius: 0 5px 5px 0;
         }
 
+        .highlight {
+            background-color: rgba(163, 190, 140, 0.2);
+            border-left: 4px solid var(--success-color);
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 0 5px 5px 0;
+        }
+
         .example-header {
             background-color: var(--secondary-color);
             color: white;
@@ -269,8 +277,10 @@
             <ul>
                 <li><a href="#overview">Overview</a></li>
                 <li><a href="#features">Features</a></li>
+                <li><a href="#thread-safety">Thread Safety</a></li>
                 <li><a href="#interface">Class Interface</a></li>
                 <li><a href="#signal-types">Signal Types</a></li>
+                <li><a href="#synchronization">Synchronization Policies</a></li>
                 <li><a href="#usage">Usage Example</a></li>
                 <li><a href="#argument-pack">ArgumentPack</a></li>
                 <li><a href="#connections">Connection Management</a></li>
@@ -279,19 +289,20 @@
         </div>
 
         <div id="overview" class="card">
-            <p>The <code>SignalSlot</code> class implements a flexible event notification system that enables loosely
+            <p>The <code>SignalSlot</code> class implements a thread-safe event notification system that enables loosely
                 coupled communication between components. It provides a mechanism for objects to register interest in
                 events (signals) and receive notifications when those events occur, without requiring direct
                 dependencies between the signal emitter and receiver.</p>
             <p>This implementation supports both parameterless signals and signals with arbitrary arguments, providing a
-                powerful foundation for event-driven programming patterns.</p>
+                powerful foundation for event-driven programming patterns in concurrent environments.</p>
         </div>
 
         <h2 id="features">Features</h2>
         <ul class="feature-list">
             <li><strong>Decoupled Communication:</strong> Objects can communicate without direct dependencies</li>
-            <li><strong>Two Signal Types:</strong> Support for both simple (parameterless) signals and data signals
-                (with arguments)</li>
+            <li><strong>Thread Safety:</strong> Comprehensive thread safety for multi-threaded environments</li>
+            <li><strong>Unified Signal Class:</strong> A single Signal class supporting both parameterless and
+                parameter-based handlers</li>
             <li><strong>Type-Safe Arguments:</strong> Strong typing for signal arguments via <code>ArgumentPack</code>
             </li>
             <li><strong>Dynamic Signal Creation:</strong> Signals can be created at runtime by name</li>
@@ -300,7 +311,28 @@
             </li>
             <li><strong>Resource Safety:</strong> Automatic cleanup of disconnected slots</li>
             <li><strong>Flexible Argument Passing:</strong> Support for multiple arguments of various types</li>
+            <li><strong>Synchronization Policies:</strong> Control how signals are emitted across threads</li>
         </ul>
+
+        <h2 id="thread-safety">Thread Safety</h2>
+        <div class="highlight">
+            <p>The SignalSlot implementation is fully thread-safe, with the following guarantees:</p>
+            <ul>
+                <li><strong>Concurrent Signal Registration:</strong> Multiple threads can safely create and register
+                    signals simultaneously</li>
+                <li><strong>Thread-Safe Connections:</strong> Multiple threads can connect to signals concurrently</li>
+                <li><strong>Concurrent Signal Emission:</strong> Signals can be emitted from multiple threads
+                    simultaneously</li>
+                <li><strong>Snapshot-Based Emission:</strong> Uses a snapshot approach to avoid locking during callback
+                    execution</li>
+                <li><strong>Atomic Connection State:</strong> Connection state is tracked using atomic variables</li>
+                <li><strong>Thread-Safe Resource Cleanup:</strong> Dead connections are removed safely without race
+                    conditions</li>
+                <li><strong>Mutex Protection:</strong> Critical sections are protected with appropriate mutexes</li>
+                <li><strong>No Deadlocks:</strong> Careful mutex design prevents deadlocks in nested signal emissions
+                </li>
+            </ul>
+        </div>
 
         <h2 id="interface">Class Interface</h2>
         <pre><code>class SignalSlot {
@@ -314,69 +346,98 @@ public:
     std::ostream &stream() const;
     
     // Signal creation
-    bool createSimpleSignal(const std::string &name);
-    bool createDataSignal(const std::string &name);
+    bool createSignal(const std::string &name);
     
     // Signal checking
     bool hasSignal(const std::string &name) const;
-    SignalType getSignalType(const std::string &name) const;
     
-    // Simple signal connections (no arguments)
-    ConnectionHandle connectSimple(const std::string &name,
-                                 std::function<void()> slot);
-    template <typename T>
-    ConnectionHandle connectSimple(const std::string &name, T *instance,
-                                 void (T::*method)());
+    // Unified connection method (auto-detects argument requirements)
+    template <typename Func>
+    ConnectionHandle connect(const std::string &name, Func &&slot);
     
-    // Data signal connections (with ArgumentPack)
-    ConnectionHandle connectData(const std::string &name,
-                               std::function<void(const ArgumentPack &)> slot);
-    template <typename T>
-    ConnectionHandle connectData(const std::string &name, T *instance,
-                               void (T::*method)(const ArgumentPack &));
+    // Connect member function (auto-detects argument requirements)
+    template <typename T, typename Method>
+    ConnectionHandle connect(const std::string &name, T *instance, Method method);
     
     // Signal emission
-    void emit(const std::string &name); // For simple signals
-    void emit(const std::string &name, const ArgumentPack &args); // For data signals
-    void emitString(const std::string &name, const std::string &value); // Convenience method
+    void emit(const std::string &name, SyncPolicy policy = SyncPolicy::Direct);
+    void emit(const std::string &name, const ArgumentPack &args,
+              SyncPolicy policy = SyncPolicy::Direct);
+    void emitString(const std::string &name, const std::string &value,
+                    SyncPolicy policy = SyncPolicy::Direct);
+    
+    // Disconnect all signals
+    void disconnectAllSignals();
     
 private:
     // Internal signal access methods
-    std::shared_ptr<SimpleSignal> getSimpleSignal(const std::string &name);
-    std::shared_ptr<DataSignal> getDataSignal(const std::string &name);
+    std::shared_ptr<Signal> getSignal(const std::string &name) const;
     
-    // Signal storage
-    std::map<std::string, std::shared_ptr<SignalBase>> m_signals;
-    std::map<std::string, SignalType> m_signal_types;
+    // Thread-safe storage
+    mutable std::mutex m_signalsMutex;
+    std::map<std::string, std::shared_ptr<Signal>> m_signals;
+    
+    mutable std::mutex m_streamMutex;
     std::reference_wrapper<std::ostream> m_output_stream;
 };</code></pre>
 
         <h2 id="signal-types">Signal Types</h2>
+        <p>The updated implementation uses a unified Signal class that can handle both parameterless callbacks and
+            callbacks that take arguments:</p>
         <div class="table-container">
             <table>
                 <thead>
                     <tr>
-                        <th>Signal Type</th>
-                        <th>Class</th>
+                        <th>Handler Type</th>
                         <th>Description</th>
-                        <th>Usage</th>
+                        <th>Use Case</th>
                     </tr>
                 </thead>
                 <tbody>
                     <tr>
-                        <td><code>NO_ARGS</code></td>
-                        <td><code>SimpleSignal</code></td>
-                        <td>Signal with no arguments</td>
+                        <td><code>void()</code></td>
+                        <td>Simple notification without arguments</td>
                         <td>Status changes, triggers, completion events</td>
                     </tr>
                     <tr>
-                        <td><code>WITH_ARGS</code></td>
-                        <td><code>DataSignal</code></td>
-                        <td>Signal with <code>ArgumentPack</code> arguments</td>
+                        <td><code>void(const ArgumentPack&)</code></td>
+                        <td>Handler with argument data</td>
                         <td>Data updates, errors with details, results</td>
                     </tr>
                 </tbody>
             </table>
+        </div>
+
+        <h2 id="synchronization">Synchronization Policies</h2>
+        <p>The SignalSlot system supports different synchronization policies for signal emission:</p>
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Policy</th>
+                        <th>Description</th>
+                        <th>Use Case</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><code>SyncPolicy::Direct</code></td>
+                        <td>Execute handlers directly in the emitting thread</td>
+                        <td>Default behavior, synchronous execution</td>
+                    </tr>
+                    <tr>
+                        <td><code>SyncPolicy::Blocking</code></td>
+                        <td>Block until all handlers have completed</td>
+                        <td>When confirmed completion is required</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="note">
+            <strong>Note:</strong> The current implementation executes both policies in the same way (in the emitting
+            thread), but the API is designed to support additional policies in the future, such as asynchronous
+            execution.
         </div>
 
         <h2 id="usage">Usage Example</h2>
@@ -386,10 +447,10 @@ class FileDownloader : public SignalSlot {
 public:
     FileDownloader() {
         // Create signals for various events
-        createSimpleSignal("downloadStarted");
-        createSimpleSignal("downloadCompleted");
-        createDataSignal("progress");
-        createDataSignal("error");
+        createSignal("downloadStarted");
+        createSignal("downloadCompleted");
+        createSignal("progress");
+        createSignal("error");
     }
     
     void startDownload(const std::string& url) {
@@ -424,29 +485,66 @@ void downloadExample() {
     // Create the downloader
     auto downloader = std::make_shared<FileDownloader>();
     
-    // Connect to signals with lambda functions
-    downloader->connectSimple("downloadStarted", []() {
+    // Connect to signals with lambda functions - no arguments
+    downloader->connect("downloadStarted", []() {
         std::cout << "Download has started!" << std::endl;
     });
     
-    downloader->connectSimple("downloadCompleted", []() {
+    downloader->connect("downloadCompleted", []() {
         std::cout << "Download completed successfully!" << std::endl;
     });
     
-    downloader->connectData("progress", [](const ArgumentPack& args) {
+    // Connect to signals with lambda functions - with arguments
+    downloader->connect("progress", [](const ArgumentPack& args) {
         float progress = args.get<float>(0);
         std::string url = args.get<std::string>(1);
         std::cout << "Downloading " << url << ": " 
                  << (progress * 100) << "%" << std::endl;
     });
     
-    downloader->connectData("error", [](const ArgumentPack& args) {
+    downloader->connect("error", [](const ArgumentPack& args) {
         std::string errorMsg = args.get<std::string>(0);
         std::cerr << "ERROR: " << errorMsg << std::endl;
     });
     
     // Start the download
     downloader->startDownload("https://example.com/file.zip");
+}</code></pre>
+
+        <div class="example-header">Thread-Safe Usage</div>
+        <pre class="example-content"><code>// Multi-threaded usage example
+void threadedExample() {
+    auto signalSource = std::make_shared<SignalSlot>();
+    signalSource->createSignal("event");
+    
+    // Connect handlers in the main thread
+    signalSource->connect("event", [](const ArgumentPack& args) {
+        int value = args.get<int>(0);
+        std::cout << "Event received with value: " << value << std::endl;
+    });
+    
+    // Create multiple worker threads that emit signals
+    std::vector<std::thread> threads;
+    for (int i = 0; i < 5; ++i) {
+        threads.emplace_back([signalSource, i]() {
+            for (int j = 0; j < 10; ++j) {
+                // Create arguments
+                ArgumentPack args;
+                args.add<int>(i * 100 + j);
+                args.add<std::string>("Thread " + std::to_string(i));
+                
+                // Emit signal safely from this thread
+                signalSource->emit("event", args);
+                
+                std::this_thread::sleep_for(std::chrono::milliseconds(10));
+            }
+        });
+    }
+    
+    // Wait for all threads to complete
+    for (auto& thread : threads) {
+        thread.join();
+    }
 }</code></pre>
 
         <h2 id="argument-pack">ArgumentPack</h2>
@@ -459,6 +557,9 @@ ArgumentPack args;
 args.add<std::string>("filename.txt");
 args.add<int>(42);
 args.add<double>(3.14159);
+
+// Direct creation with variadic constructor
+ArgumentPack args2("filename.txt", 42, 3.14159);
 
 // Retrieving values by index and type
 std::string filename = args.get<std::string>(0);
@@ -485,7 +586,7 @@ ArgumentPack copy = args.clone();</code></pre>
 
         <div class="example-header">Managing Connections</div>
         <pre class="example-content"><code>// Get a connection handle when connecting to a signal
-ConnectionHandle connection = object->connectData("dataReceived", myCallback);
+ConnectionHandle connection = object->connect("dataReceived", myCallback);
 
 // Later, disconnect when no longer needed
 connection->disconnect();
@@ -496,110 +597,100 @@ if (connection->connected()) {
 }</code></pre>
 
         <p>Connection handles use shared ownership to ensure connections are properly managed even when handlers go out
-            of scope.</p>
+            of scope or are accessed from multiple threads.</p>
 
-        <h2 id="best-practices">Best Practices</h2>
+        <h2 id="best-practices">Thread-Safe Best Practices</h2>
         <ul class="feature-list">
-            <li><strong>Signal Naming:</strong> Use descriptive signal names that clearly indicate the event (e.g.,
-                "dataReceived" instead of "data")</li>
-            <li><strong>Error Handling:</strong> Always handle exceptions when processing slots to prevent one handler
-                from breaking others</li>
-            <li><strong>Connection Management:</strong> Store connection handles for connections that need to be
-                disconnected later</li>
-            <li><strong>Documentation:</strong> Document the signals provided by a class, including their names and
-                argument types</li>
-            <li><strong>Thread Safety:</strong> Be aware that SignalSlot is not inherently thread-safe; add
-                synchronization if needed</li>
+            <li><strong>Signal Lifetime:</strong> Ensure signals exist for the entire duration they might be emitted
+            </li>
+            <li><strong>Handler Thread Safety:</strong> Make sure signal handlers are thread-safe if they may be called
+                from multiple threads</li>
+            <li><strong>Avoid Deadlocks:</strong> Don't emit signals while holding locks that handlers might also try to
+                acquire</li>
+            <li><strong>Handler Performance:</strong> Keep handlers lightweight to avoid blocking the emitting thread
+                for too long</li>
+            <li><strong>Connection Sharing:</strong> Be careful when sharing ConnectionHandles between threads</li>
+            <li><strong>Concurrent Disconnection:</strong> It's safe to disconnect the same connection from multiple
+                threads</li>
             <li><strong>Resource Management:</strong> Disconnect signals when objects are destroyed to prevent dangling
                 references</li>
-            <li><strong>Signal Granularity:</strong> Create focused signals for specific events rather than overloading
-                a single signal</li>
-            <li><strong>Consistency:</strong> Maintain consistent argument order in ArgumentPack for each signal</li>
+            <li><strong>Synchronization Policy:</strong> Choose the appropriate sync policy based on your thread model
+            </li>
         </ul>
 
-        <h2 id="inheritance">Inheritance and Extension</h2>
-        <p>SignalSlot is designed to be inherited by classes that need to provide signal functionality:</p>
-
-        <div class="example-header">Inheriting SignalSlot</div>
-        <pre class="example-content"><code>class MyComponent : public SignalSlot {
-public:
-    MyComponent() {
-        // Create signals during construction
-        createSimpleSignal("initialized");
-        createDataSignal("stateChanged");
-    }
-    
-    void initialize() {
-        // Implementation...
-        emit("initialized");
-    }
-    
-    void setState(int newState) {
-        int oldState = m_state;
-        m_state = newState;
-        
-        // Notify about state change
-        ArgumentPack args;
-        args.add<int>(oldState);
-        args.add<int>(newState);
-        emit("stateChanged", args);
-    }
-    
-private:
-    int m_state = 0;
-};</code></pre>
-
-        <h2 id="performance">Performance Considerations</h2>
-        <ul class="feature-list">
-            <li>Signal emission has O(n) complexity where n is the number of connected slots</li>
-            <li>Connections use weak pointers internally to allow automatic cleanup</li>
-            <li>Disconnected slots are removed lazily during signal emission</li>
-            <li>ArgumentPack uses type erasure which involves dynamic allocation for arguments</li>
-            <li>String-based signal lookup adds a small overhead compared to direct signal objects</li>
-        </ul>
-
-        <div class="note">
-            <strong>Note:</strong> For high-performance scenarios with frequent signal emissions, consider optimizing by
-            reducing the number of signals or batching emissions.
+        <h2 id="implementation">Thread-Safe Implementation Details</h2>
+        <div class="highlight">
+            <h3>Key Thread Safety Mechanisms</h3>
+            <ul>
+                <li><strong>Mutex Protection:</strong> All signal access and modification operations are protected with
+                    mutexes</li>
+                <li><strong>Atomic Connection State:</strong> Connection state is tracked using std::atomic for
+                    thread-safe access</li>
+                <li><strong>Snapshot-Based Emission:</strong> Active connections are captured in a snapshot to avoid
+                    locking during execution</li>
+                <li><strong>Thread-Safe Dead Connection Pruning:</strong> Dead connections are removed safely during
+                    signal emission</li>
+                <li><strong>Lock-Free Signal Emission:</strong> Once the snapshot is captured, handlers execute without
+                    locks for maximum performance</li>
+                <li><strong>Safe Connection Destruction:</strong> Connections can be safely destroyed from any thread
+                </li>
+            </ul>
         </div>
 
-        <h2 id="implementation">Implementation Details</h2>
-        <ul class="feature-list">
-            <li>Slots are wrapped in <code>std::function</code> objects for type erasure</li>
-            <li>Signal implementations use vectors of weak pointers to connection objects</li>
-            <li>Dead connections are automatically pruned during signal emission</li>
-            <li>SignalSlot uses <code>std::cerr</code> by default for error reporting, but this can be changed</li>
-            <li>ArgumentPack manages type information and storage using a type-erased container</li>
-            <li>Connection handles use shared ownership to manage connection lifetime</li>
-        </ul>
+        <h2 id="advanced">Advanced Thread-Safe Features</h2>
 
-        <h2 id="advanced">Advanced Usage</h2>
+        <h3>Signal Emission Across Thread Boundaries</h3>
+        <p>The SignalSlot system allows signals to be safely emitted across thread boundaries:</p>
 
-        <h3>Signal Forwarding</h3>
-        <p>Signals can be forwarded from one object to another:</p>
+        <div class="example-header">Cross-Thread Signal Emission</div>
+        <pre class="example-content"><code>// Thread 1: Set up signals and connections
+auto manager = std::make_shared<TaskManager>();
+manager->createSignal("taskCompleted");
 
-        <div class="example-header">Signal Forwarding</div>
-        <pre class="example-content"><code>// Forward signals from one object to another
-childObject->connectData("progress", [parentObject](const ArgumentPack& args) {
-    parentObject->emit("childProgress", args);
+// Thread 2: Emit signals
+std::thread worker([manager]() {
+    // Perform work...
+    
+    // Create result arguments
+    ArgumentPack results;
+    results.add<int>(42);
+    results.add<std::string>("Task completed successfully");
+    
+    // Safely emit signal from worker thread
+    manager->emit("taskCompleted", results);
 });</code></pre>
 
-        <h3>Custom Signal Types</h3>
-        <p>The SignalSlot system can be extended with custom signal types by deriving from SignalBase:</p>
+        <h3>Thread-Safe Connection Lifetimes</h3>
+        <p>ConnectionHandles ensure connections are properly managed across threads:</p>
 
-        <div class="note">
-            <strong>Note:</strong> Extending the signal system with custom signal types is an advanced topic and
-            requires careful implementation to maintain consistency with the existing system.
-        </div>
+        <div class="example-header">Thread-Safe Connection Management</div>
+        <pre class="example-content"><code>std::vector<ConnectionHandle> connections;
+std::mutex connectionsMutex;
+
+// Thread 1: Create connections
+{
+    std::lock_guard<std::mutex> lock(connectionsMutex);
+    connections.push_back(source->connect("event", handler1));
+    connections.push_back(source->connect("event", handler2));
+}
+
+// Thread 2: Disconnect a specific connection
+{
+    std::lock_guard<std::mutex> lock(connectionsMutex);
+    if (!connections.empty()) {
+        connections[0]->disconnect();
+    }
+}</code></pre>
 
         <h2 id="summary">Summary</h2>
-        <p>The SignalSlot class provides a robust foundation for event-based communication in the Task Framework. By
-            enabling loosely coupled interaction between components, it promotes modular, maintainable code structures
-            that can be easily extended and modified.</p>
+        <p>The SignalSlot class provides a robust, thread-safe foundation for event-based communication in the Task
+            Framework. By enabling loosely coupled interaction between components, even across thread boundaries, it
+            promotes modular, maintainable code structures that can be easily extended and modified in concurrent
+            applications.</p>
 
-        <p>This implementation balances flexibility, type safety, and ease of use, making it suitable for a wide range
-            of application requirements. The consistent interface across the framework ensures that all components can
-            participate in the signal-slot communication system with minimal integration effort.</p>
+        <p>This implementation balances flexibility, type safety, and thread safety, making it suitable for a wide range
+            of concurrent application requirements. The consistent interface across the framework ensures that all
+            components can participate in the signal-slot communication system with minimal integration effort.</p>
     </section>
 </body>
 

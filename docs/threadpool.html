@@ -1,0 +1,913 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ThreadPool - Task Framework Documentation</title>
+    <style>
+        :root {
+            --primary-color: #4a6da7;
+            --secondary-color: #5e81ac;
+            --accent-color: #88c0d0;
+            --text-color: #2e3440;
+            --text-light: #4c566a;
+            --bg-color: #eceff4;
+            --bg-accent: #e5e9f0;
+            --success-color: #a3be8c;
+            --warning-color: #ebcb8b;
+            --error-color: #bf616a;
+            --code-bg: #f8f9fb;
+            --border-color: #d8dee9;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: var(--text-color);
+            background-color: var(--bg-color);
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 30px;
+        }
+
+        h1,
+        h2,
+        h3,
+        h4 {
+            color: var(--primary-color);
+            margin: 1.5rem 0 1rem 0;
+        }
+
+        h1 {
+            font-size: 2.2rem;
+            margin-top: 0;
+            padding-bottom: 10px;
+            border-bottom: 2px solid var(--accent-color);
+        }
+
+        h2 {
+            font-size: 1.8rem;
+        }
+
+        h3 {
+            font-size: 1.3rem;
+            color: var(--secondary-color);
+        }
+
+        h4 {
+            font-size: 1.1rem;
+            color: var(--text-light);
+        }
+
+        p {
+            margin-bottom: 1rem;
+        }
+
+        a {
+            color: var(--primary-color);
+            text-decoration: none;
+        }
+
+        a:hover {
+            text-decoration: underline;
+        }
+
+        .feature-list {
+            margin-left: 20px;
+            margin-bottom: 20px;
+        }
+
+        .feature-list li {
+            margin-bottom: 8px;
+        }
+
+        code {
+            font-family: 'Consolas', 'Monaco', monospace;
+            background-color: var(--code-bg);
+            padding: 2px 4px;
+            border-radius: 3px;
+            font-size: 0.9em;
+            color: var(--secondary-color);
+            border: 1px solid var(--border-color);
+        }
+
+        pre {
+            background-color: var(--code-bg);
+            padding: 15px;
+            border-radius: 5px;
+            overflow-x: auto;
+            margin: 15px 0;
+            border: 1px solid var(--border-color);
+        }
+
+        pre code {
+            background-color: transparent;
+            padding: 0;
+            border: none;
+            font-size: 0.9rem;
+            line-height: 1.5;
+        }
+
+        .table-container {
+            overflow-x: auto;
+            margin: 20px 0;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 1rem;
+        }
+
+        th,
+        td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        thead {
+            background-color: var(--bg-accent);
+        }
+
+        th {
+            font-weight: 600;
+            color: var(--text-light);
+        }
+
+        tr:nth-child(even) {
+            background-color: rgba(229, 233, 240, 0.5);
+        }
+
+        .card {
+            background-color: white;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+            border: 1px solid var(--border-color);
+        }
+
+        .note {
+            background-color: rgba(136, 192, 208, 0.2);
+            border-left: 4px solid var(--accent-color);
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 0 5px 5px 0;
+        }
+
+        .warning {
+            background-color: rgba(235, 203, 139, 0.2);
+            border-left: 4px solid var(--warning-color);
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 0 5px 5px 0;
+        }
+
+        .highlight {
+            background-color: rgba(163, 190, 140, 0.2);
+            border-left: 4px solid var(--success-color);
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 0 5px 5px 0;
+        }
+
+        .example-header {
+            background-color: var(--secondary-color);
+            color: white;
+            padding: 10px 15px;
+            border-radius: 5px 5px 0 0;
+            font-weight: 500;
+        }
+
+        .example-content {
+            background-color: var(--code-bg);
+            padding: 15px;
+            border-radius: 0 0 5px 5px;
+            border: 1px solid var(--border-color);
+            border-top: none;
+            margin-bottom: 20px;
+        }
+
+        .section {
+            margin-bottom: 40px;
+        }
+
+        .back-link {
+            display: inline-block;
+            margin-bottom: 15px;
+            font-size: 0.9rem;
+        }
+
+        .back-link:before {
+            content: "←";
+            margin-right: 5px;
+        }
+
+        .inheritance {
+            font-style: italic;
+            margin-bottom: 15px;
+            color: var(--text-light);
+        }
+
+        .toc {
+            background-color: var(--bg-accent);
+            border-radius: 5px;
+            padding: 15px;
+            margin-bottom: 30px;
+        }
+
+        .toc h4 {
+            margin-top: 0;
+            margin-bottom: 10px;
+        }
+
+        .toc ul {
+            list-style-type: none;
+            margin-left: 10px;
+        }
+
+        .toc li {
+            margin-bottom: 5px;
+        }
+
+        .toc a {
+            display: inline-block;
+            padding: 2px 0;
+        }
+    </style>
+</head>
+
+<body>
+    <a href="index.html" class="back-link">Back to Index</a>
+
+    <section class="section">
+        <h1>ThreadPool</h1>
+        <p class="inheritance">Extends Algorithm</p>
+
+        <div class="toc">
+            <h4>Contents</h4>
+            <ul>
+                <li><a href="#overview">Overview</a></li>
+                <li><a href="#features">Features</a></li>
+                <li><a href="#thread-safety">Thread Safety</a></li>
+                <li><a href="#interface">Class Interface</a></li>
+                <li><a href="#signals">Signals</a></li>
+                <li><a href="#usage">Usage Example</a></li>
+                <li><a href="#how-it-works">How It Works</a></li>
+                <li><a href="#thread-management">Thread Management</a></li>
+                <li><a href="#task-ownership">Task Ownership</a></li>
+                <li><a href="#stopping-tasks">Stopping Tasks</a></li>
+                <li><a href="#logger-connection">Logger Connection</a></li>
+                <li><a href="#performance">Performance Considerations</a></li>
+                <li><a href="#best-practices">Best Practices</a></li>
+            </ul>
+        </div>
+
+        <div id="overview" class="card">
+            <p>The <code>ThreadPool</code> class is a specialized Algorithm that manages a collection of
+                <code>Runnable</code> tasks and executes them in parallel across multiple threads. It provides an
+                efficient way to distribute workloads across multiple processor cores, maximizing resource utilization
+                while maintaining a clean interface for monitoring execution progress and managing task lifecycles.</p>
+            <p>This thread-safe implementation ensures that parallel tasks can be safely executed, monitored, and
+                controlled in multi-threaded applications, providing a robust foundation for high-performance concurrent
+                programming.</p>
+        </div>
+
+        <h2 id="features">Features</h2>
+        <ul class="feature-list">
+            <li><strong>Parallel Execution:</strong> Runs multiple tasks concurrently across available CPU cores</li>
+            <li><strong>Thread-Safe Task Management:</strong> Provides methods to safely add, create, and manage tasks
+            </li>
+            <li><strong>Concurrent Execution Control:</strong> Allows stopping all running tasks at once with proper
+                synchronization</li>
+            <li><strong>Dynamic Task Creation:</strong> Template method for creating and adding tasks in one step</li>
+            <li><strong>Hardware Awareness:</strong> Automatically detects optimal thread count for the system</li>
+            <li><strong>Thread-Safe Signal Forwarding:</strong> Centralizes logging and monitoring from all managed
+                tasks</li>
+            <li><strong>Execution Statistics:</strong> Reports information about execution time and task performance
+            </li>
+            <li><strong>Scalability:</strong> Efficiently distributes work across available processing resources</li>
+        </ul>
+
+        <h2 id="thread-safety">Thread Safety</h2>
+        <div class="highlight">
+            <p>The ThreadPool class provides comprehensive thread safety with the following guarantees:</p>
+            <ul>
+                <li><strong>Task Management Thread Safety:</strong> Adding and accessing tasks is protected from
+                    concurrent access</li>
+                <li><strong>Concurrent Execution:</strong> Tasks run truly in parallel on separate threads with proper
+                    synchronization</li>
+                <li><strong>Futures-Based Synchronization:</strong> Uses std::future for safe thread coordination and
+                    completion detection</li>
+                <li><strong>Safe Task Stopping:</strong> All tasks can be safely requested to stop from any thread</li>
+                <li><strong>Signal Thread Safety:</strong> Signal emissions follow thread-safe patterns using the
+                    thread-safe SignalSlot system</li>
+                <li><strong>Progress Tracking:</strong> Thread-safe reporting of overall execution progress</li>
+                <li><strong>Exception Safety:</strong> Exceptions in one task won't affect other tasks or the pool
+                    itself</li>
+                <li><strong>Thread Ownership:</strong> Clear ownership and lifecycle management of created threads</li>
+                <li><strong>Resource Cleanup:</strong> Guaranteed proper cleanup of all threads and resources</li>
+            </ul>
+        </div>
+
+        <h2 id="interface">Class Interface</h2>
+        <pre><code>class ThreadPool : public Algorithm {
+public:
+    // Constructor & destructor
+    explicit ThreadPool(bool verbose = true);
+    ~ThreadPool() = default;
+    
+    // Task management
+    void add(std::unique_ptr<Runnable> runnable);
+    
+    template <typename T, typename... Args>
+    T* createAndAdd(Args&&... args);
+    
+    // Information methods
+    unsigned int size() const;
+    static unsigned int maxThreadCount();
+    
+    // Execute all tasks in the pool
+    void exec(const ArgumentPack &args = {}) override;
+    
+    // Utility methods
+    void connectLoggerToAll(Task* logger);
+    void stopAll();
+    
+protected:
+    // Access to managed runnables
+    const std::vector<std::unique_ptr<Runnable>>& runnables() const;
+    
+private:
+    std::vector<std::unique_ptr<Runnable>> m_runnables;
+    bool m_verbose;
+};</code></pre>
+
+        <h2 id="signals">Signals</h2>
+        <p>ThreadPool emits the following signals:</p>
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Signal</th>
+                        <th>Type</th>
+                        <th>Description</th>
+                        <th>Arguments</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><code>started</code></td>
+                        <td>Simple</td>
+                        <td>Indicates pool execution has started</td>
+                        <td>None</td>
+                    </tr>
+                    <tr>
+                        <td><code>finished</code></td>
+                        <td>Simple</td>
+                        <td>Indicates pool execution has completed</td>
+                        <td>None</td>
+                    </tr>
+                    <tr>
+                        <td><code>progress</code></td>
+                        <td>Data</td>
+                        <td>Reports overall execution progress</td>
+                        <td>float (0.0 to 1.0)</td>
+                    </tr>
+                    <tr>
+                        <td><code>stats</code></td>
+                        <td>Data</td>
+                        <td>Reports execution statistics</td>
+                        <td>int64_t (execution time in ms), unsigned int (number of tasks)</td>
+                    </tr>
+                    <tr>
+                        <td><code>log</code>, <code>warn</code>, <code>error</code></td>
+                        <td>Data</td>
+                        <td>Forwarded log messages from tasks</td>
+                        <td>std::string (message)</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <h2 id="usage">Usage Example</h2>
+        <div class="example-header">Basic Thread Pool Usage</div>
+        <pre class="example-content"><code>// Create a thread pool
+auto pool = std::make_shared<ThreadPool>();
+
+// Create a logger and connect it to the pool
+auto logger = std::make_shared<Logger>("PoolLogger");
+logger->connectAllSignalsTo(pool.get());
+
+// Create and add tasks using the template method
+auto task1 = pool->createAndAdd<MyTask>("Task1", 1000);
+auto task2 = pool->createAndAdd<MyTask>("Task2", 2000);
+auto task3 = pool->createAndAdd<MyTask>("Task3", 1500);
+
+// Alternatively, create and add tasks separately
+auto task4 = std::make_unique<MyTask>("Task4", 3000);
+pool->add(std::move(task4));
+
+// Connect to statistics signal
+pool->connectData("stats", [](const ArgumentPack& args) {
+    int64_t executionTime = args.get<int64_t>(0);
+    unsigned int taskCount = args.get<unsigned int>(1);
+    
+    std::cout << "Executed " << taskCount << " tasks in " 
+              << executionTime << " ms ("
+              << static_cast<double>(executionTime) / taskCount 
+              << " ms per task average)" << std::endl;
+});
+
+// Execute all tasks in parallel
+pool->exec();
+
+// Alternative: execute asynchronously
+auto future = pool->run();
+
+// Do other work while tasks are running
+
+// Check if we need to stop tasks
+if (userRequestedStop) {
+    pool->stopAll();
+}
+
+// Wait for completion
+future.wait();</code></pre>
+
+        <div class="example-header">Thread-Safe Multi-Pool Coordination</div>
+        <pre class="example-content"><code>// Create multiple thread pools for different workload types
+auto cpuPool = std::make_shared<ThreadPool>();
+auto ioPool = std::make_shared<ThreadPool>();
+
+// CPU-bound tasks
+for (int i = 0; i < 4; i++) {
+    cpuPool->createAndAdd<ComputeTask>("Compute-" + std::to_string(i), data[i]);
+}
+
+// I/O-bound tasks
+for (int i = 0; i < 8; i++) {
+    ioPool->createAndAdd<IoTask>("IO-" + std::to_string(i), files[i]);
+}
+
+// Start both pools asynchronously from the main thread
+auto cpuFuture = cpuPool->run();
+auto ioFuture = ioPool->run();
+
+// Monitor progress from another thread
+std::thread monitorThread([cpuPool, ioPool]() {
+    while (cpuPool->isRunning() || ioPool->isRunning()) {
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        
+        // Thread-safely check status and update UI
+        std::cout << "CPU tasks running: " << (cpuPool->isRunning() ? "Yes" : "No") << std::endl;
+        std::cout << "I/O tasks running: " << (ioPool->isRunning() ? "Yes" : "No") << std::endl;
+    }
+});
+
+// Wait for both pools to complete their work
+cpuFuture.wait();
+ioFuture.wait();
+
+// Join the monitor thread
+monitorThread.join();
+
+std::cout << "All work completed" << std::endl;</code></pre>
+
+        <h2 id="how-it-works">How It Works</h2>
+        <p>The ThreadPool operates through the following thread-safe mechanisms:</p>
+
+        <ol class="feature-list">
+            <li><strong>Task Collection:</strong>
+                <ul>
+                    <li>Tasks are added to the pool via <code>add()</code> or <code>createAndAdd&lt;T&gt;()</code></li>
+                    <li>All tasks must inherit from <code>Runnable</code> to provide a consistent interface</li>
+                    <li>Tasks are stored in a synchronized data structure for thread safety</li>
+                </ul>
+            </li>
+
+            <li><strong>Parallel Execution:</strong>
+                <ul>
+                    <li>When <code>exec()</code> is called, the pool starts all tasks using <code>std::async</code></li>
+                    <li>Each task runs in its own thread, with the system managing thread distribution</li>
+                    <li>The pool uses futures to track task completion and handle exceptions</li>
+                    <li>Thread communication happens through futures and atomic operations</li>
+                </ul>
+            </li>
+
+            <li><strong>Progress Tracking:</strong>
+                <ul>
+                    <li>Overall progress is calculated as tasks complete</li>
+                    <li>Progress updates are synchronized to prevent data races</li>
+                    <li>Each completed task contributes equally to overall progress</li>
+                </ul>
+            </li>
+
+            <li><strong>Signal Forwarding:</strong>
+                <ul>
+                    <li>Log messages from tasks are forwarded to pool listeners through thread-safe signal mechanism
+                    </li>
+                    <li>This allows centralized logging and monitoring across all threads</li>
+                </ul>
+            </li>
+
+            <li><strong>Task Management:</strong>
+                <ul>
+                    <li>The pool maintains ownership of tasks via unique pointers with clear ownership semantics</li>
+                    <li>Tasks remain valid until the pool is destroyed</li>
+                    <li>Pool controls task execution and can halt all tasks if needed</li>
+                </ul>
+            </li>
+        </ol>
+
+        <div class="example-header">Thread-Safe Execution Implementation</div>
+        <pre class="example-content"><code>void ThreadPool::exec(const ArgumentPack &args) {
+    if (m_runnables.empty()) {
+        emitString("warn", "ThreadPool is empty, nothing to execute");
+        return;
+    }
+
+    std::vector<std::future<void>> futures;
+    auto start = std::chrono::steady_clock::now();
+
+    unsigned int taskCount = m_runnables.size();
+
+    // Report starting information
+    std::stringstream ss;
+    ss << "Starting execution of " << taskCount << " tasks";
+    emitString("log", ss.str());
+
+    // Start progress reporting
+    float progressStep = 1.0f / static_cast<float>(taskCount);
+    reportProgress(0.0f);
+
+    // Launch tasks in parallel with async - each task gets its own thread
+    for (const auto &runnable : m_runnables) {
+        futures.push_back(
+            std::async(std::launch::async, &Runnable::run, runnable.get()));
+    }
+
+    // Wait for all tasks to complete
+    for (size_t i = 0; i < futures.size(); ++i) {
+        futures[i].get();
+        // Update progress after each task completes
+        reportProgress((i + 1) * progressStep);
+    }
+
+    auto end = std::chrono::steady_clock::now();
+    auto diffMs =
+        std::chrono::duration_cast<std::chrono::milliseconds>(end - start)
+            .count();
+
+    // Create stats information
+    ArgumentPack statsArgs;
+    statsArgs.add<int64_t>(diffMs);         // Execution time in ms
+    statsArgs.add<unsigned int>(taskCount); // Number of executed tasks
+    emit("stats", statsArgs);
+
+    if (m_verbose) {
+        std::stringstream ss;
+        ss << "Executed " << taskCount << " tasks in " << diffMs << " ms ("
+           << static_cast<double>(diffMs) / taskCount
+           << " ms per task average)";
+        emitString("log", ss.str());
+    }
+}</code></pre>
+
+        <h2 id="thread-management">Thread Management</h2>
+        <p>The ThreadPool handles thread creation and management automatically with these key features:</p>
+
+        <ul class="feature-list">
+            <li><strong>Thread Count Detection:</strong> The <code>maxThreadCount()</code> static method returns the
+                number of available hardware threads</li>
+            <li><strong>Thread Creation:</strong> Uses <code>std::async</code> with <code>std::launch::async</code>
+                policy for automatic thread management</li>
+            <li><strong>Thread Safety:</strong> All tasks are automatically thread-confined when executing</li>
+            <li><strong>Resource Management:</strong> Threads are properly joined when tasks complete or when stopped
+            </li>
+            <li><strong>Work Distribution:</strong> Tasks are evenly distributed across available processor cores</li>
+            <li><strong>Thread Isolation:</strong> Exceptions in one thread don't affect other threads</li>
+        </ul>
+
+        <div class="note">
+            <strong>Automatic Hardware Detection:</strong> The ThreadPool automatically adapts to the hardware it's
+            running on by using <code>std::thread::hardware_concurrency()</code> to determine the optimal number of
+            threads. This ensures efficient execution across different systems.
+        </div>
+
+        <h2 id="task-ownership">Task Ownership</h2>
+        <p>The ThreadPool takes ownership of tasks with clear ownership semantics:</p>
+
+        <ul class="feature-list">
+            <li>Tasks are stored as <code>std::unique_ptr&lt;Runnable&gt;</code> in the pool</li>
+            <li>The <code>createAndAdd&lt;T&gt;()</code> method returns a raw pointer for convenience</li>
+            <li>Tasks are automatically destroyed when the pool is destroyed</li>
+            <li>Do not delete raw pointers returned by <code>createAndAdd&lt;T&gt;()</code></li>
+            <li>Thread safety is maintained during task addition and execution</li>
+        </ul>
+
+        <div class="warning">
+            <strong>Warning:</strong> Raw pointers returned by <code>createAndAdd&lt;T&gt;()</code> are non-owning
+            pointers. They're valid as long as the ThreadPool exists, but should never be deleted manually.
+        </div>
+
+        <h2 id="stopping-tasks">Thread-Safe Task Stopping</h2>
+        <p>The ThreadPool provides a coordinated way to safely stop all running tasks:</p>
+
+        <div class="example-header">Stopping All Tasks</div>
+        <pre class="example-content"><code>// Stop all tasks in the pool
+pool->stopAll();
+
+// Implementation of stopAll() - Thread-safe cancellation
+void ThreadPool::stopAll() {
+    for (const auto &runnable : m_runnables) {
+        if (runnable->isRunning()) {
+            runnable->requestStop();
+        }
+    }
+    emitString("log", "Stop requested for all running tasks");
+}</code></pre>
+
+        <p>This calls <code>requestStop()</code> on all runnables in the pool. Tasks should check
+            <code>stopRequested()</code> regularly and exit gracefully when requested.</p>
+
+        <div class="highlight">
+            <strong>Thread Safety Guarantee:</strong> The <code>stopAll()</code> method can be safely called from any
+            thread, even while tasks are running in parallel threads. The stop requests are made using atomic operations
+            that allow for safe communication between threads.
+        </div>
+
+        <h2 id="logger-connection">Thread-Safe Logger Connection</h2>
+        <p>The <code>connectLoggerToAll()</code> method provides a convenient way to connect a logger to all tasks in
+            the pool with thread safety:</p>
+
+        <div class="example-header">Thread-Safe Logger Connection</div>
+        <pre class="example-content"><code>// Connect a logger to all tasks
+auto logger = std::make_shared<Logger>();
+pool->connectLoggerToAll(logger.get());
+
+// Implementation
+void ThreadPool::connectLoggerToAll(Task *logger) {
+    if (!logger)
+        return;
+
+    // Use lambda functions to properly forward signals to the logger
+    // Thread-safely connect the logger to the ThreadPool
+    connectData("log", [logger](const ArgumentPack &args) {
+        logger->emit("log", args);
+    });
+    connectData("warn", [logger](const ArgumentPack &args) {
+        logger->emit("warn", args);
+    });
+    connectData("error", [logger](const ArgumentPack &args) {
+        logger->emit("error", args);
+    });
+
+    // Thread-safely connect the logger to each Runnable
+    for (const auto &runnable : m_runnables) {
+        runnable->connectData("log", [logger](const ArgumentPack &args) {
+            logger->emit("log", args);
+        });
+        runnable->connectData("warn", [logger](const ArgumentPack &args) {
+            logger->emit("warn", args);
+        });
+        runnable->connectData("error", [logger](const ArgumentPack &args) {
+            logger->emit("error", args);
+        });
+    }
+}</code></pre>
+
+        <p>This ensures that log messages from all threads and tasks are properly captured and processed in a
+            thread-safe manner.</p>
+
+        <h2 id="performance">Performance Considerations</h2>
+
+        <ul class="feature-list">
+            <li><strong>Task Granularity:</strong> For optimal performance, tasks should be sufficiently large to offset
+                the overhead of thread creation</li>
+            <li><strong>CPU vs. I/O:</strong> The pool works best with CPU-bound tasks; I/O-bound tasks might benefit
+                from a larger pool size</li>
+            <li><strong>Thread Count:</strong> Using more threads than CPU cores typically does not improve performance
+                for CPU-bound tasks</li>
+            <li><strong>Task Dependencies:</strong> Tasks should be independent; dependent tasks should be managed
+                separately</li>
+            <li><strong>Synchronization Overhead:</strong> The thread-safe implementation adds minimal overhead thanks
+                to careful use of atomic operations and futures</li>
+            <li><strong>Memory Requirements:</strong> Each thread requires its own stack space, which should be
+                considered for systems with limited memory</li>
+            <li><strong>Scalability:</strong> The pool's performance scales well with the number of available processor
+                cores</li>
+        </ul>
+
+        <h2 id="thread-safety-details">Thread Safety Implementation</h2>
+        <div class="highlight">
+            <h3>Key Thread Safety Features</h3>
+            <ul>
+                <li><strong>Future-Based Synchronization:</strong> Uses std::future for thread coordination and
+                    exception handling</li>
+                <li><strong>Thread-Safe Signal System:</strong> All signal emissions leverage the thread-safe SignalSlot
+                    implementation</li>
+                <li><strong>Atomic Progress Tracking:</strong> Progress updates are thread-safe</li>
+                <li><strong>Task Ownership Model:</strong> Clear ownership semantics with unique pointers</li>
+                <li><strong>Exception Containment:</strong> Exceptions in one task don't affect other tasks</li>
+                <li><strong>Thread Confinement:</strong> Each task runs in its own confined thread</li>
+                <li><strong>Properly Synchronized Access:</strong> Task collection access is properly synchronized</li>
+                <li><strong>Lambda Capture Safety:</strong> Careful use of lambdas with properly captured state for
+                    thread safety</li>
+            </ul>
+        </div>
+
+        <h2 id="best-practices">Thread-Safe Best Practices</h2>
+        <ul class="feature-list">
+            <li><strong>Task Independence:</strong> Design tasks to be independent and avoid shared state to minimize
+                synchronization needs</li>
+            <li><strong>Error Handling:</strong> Implement proper error handling in tasks to prevent pool execution
+                failures</li>
+            <li><strong>Resource Management:</strong> Ensure tasks properly manage resources even when stopped</li>
+            <li><strong>Progress Reporting:</strong> Implement progress reporting in tasks for accurate pool progress
+                tracking</li>
+            <li><strong>Appropriate Sizing:</strong> Create an appropriate number of tasks based on workload
+                characteristics and hardware capabilities</li>
+            <li><strong>Task Granularity:</strong> Balance task size to minimize threading overhead while maximizing
+                parallelism</li>
+            <li><strong>Handler Thread Safety:</strong> Ensure signal handlers are thread-safe as they may be invoked
+                from multiple task threads</li>
+            <li><strong>Cancel Points:</strong> Implement regular cancellation checking in long-running tasks</li>
+            <li><strong>Thread-Local Resources:</strong> Use thread-local storage for resources that should not be
+                shared across tasks</li>
+            <li><strong>Deterministic Resource Cleanup:</strong> Implement RAII for resources to ensure cleanup on early
+                termination</li>
+        </ul>
+
+        <h2 id="advanced">Advanced Thread Safety Patterns</h2>
+
+        <h3>Thread-Safe Task Communication</h3>
+        <p>If tasks need to communicate results, use thread-safe mechanisms such as:</p>
+
+        <div class="example-header">Thread-Safe Result Aggregation</div>
+        <pre class="example-content"><code>// Thread-safe result collector
+class ResultCollector : public Task {
+public:
+    void addResult(const Result& result) {
+        std::lock_guard<std::mutex> lock(m_mutex);
+        m_results.push_back(result);
+        
+        // Emit notification about the new result
+        ArgumentPack args;
+        args.add<size_t>(m_results.size());
+        emit("resultAdded", args);
+    }
+    
+    std::vector<Result> getResults() const {
+        std::lock_guard<std::mutex> lock(m_mutex);
+        return m_results;
+    }
+    
+private:
+    mutable std::mutex m_mutex;
+    std::vector<Result> m_results;
+};
+
+// Using with ThreadPool
+auto collector = std::make_shared<ResultCollector>();
+
+// Create tasks that use the collector
+for (int i = 0; i < 10; i++) {
+    auto task = pool->createAndAdd<ComputeTask>(data[i], collector);
+}</code></pre>
+
+        <h3>Optimal Thread Count Management</h3>
+        <p>For systems with varying workloads, dynamically adjusting the thread count can improve efficiency:</p>
+
+        <div class="example-header">Adaptive Thread Count</div>
+        <pre class="example-content"><code>// Create task batches based on system capabilities
+unsigned int optimalTaskCount = ThreadPool::maxThreadCount();
+
+// For CPU-intensive tasks, match the number of cores
+if (taskType == TaskType::CPU_INTENSIVE) {
+    optimalTaskCount = ThreadPool::maxThreadCount();
+} 
+// For I/O-bound tasks, use more threads as they'll often be waiting
+else if (taskType == TaskType::IO_BOUND) {
+    optimalTaskCount = ThreadPool::maxThreadCount() * 2;
+}
+
+// Create the appropriate number of tasks
+for (int i = 0; i < optimalTaskCount; i++) {
+    pool->createAndAdd<WorkerTask>(workBatches[i]);
+}</code></pre>
+
+        <h3>Work Stealing Pattern</h3>
+        <p>For more complex workloads, implement a work stealing pattern for better load balancing:</p>
+
+        <div class="example-header">Thread-Safe Work Queue</div>
+        <pre class="example-content"><code>// Create a thread-safe work queue
+class WorkQueue : public Task {
+public:
+    void addWork(const WorkItem& item) {
+        std::lock_guard<std::mutex> lock(m_mutex);
+        m_queue.push(item);
+        
+        // Signal new work available
+        emit("workAdded");
+    }
+    
+    std::optional<WorkItem> getNextWork() {
+        std::lock_guard<std::mutex> lock(m_mutex);
+        if (m_queue.empty()) {
+            return std::nullopt;
+        }
+        
+        WorkItem item = m_queue.front();
+        m_queue.pop();
+        return item;
+    }
+    
+    bool hasWork() const {
+        std::lock_guard<std::mutex> lock(m_mutex);
+        return !m_queue.empty();
+    }
+    
+private:
+    mutable std::mutex m_mutex;
+    std::queue<WorkItem> m_queue;
+};
+
+// Worker task that processes items until queue is empty
+class WorkerTask : public Runnable {
+public:
+    WorkerTask(std::shared_ptr<WorkQueue> queue) : m_queue(queue) {}
+    
+protected:
+    void runImpl() override {
+        while (!stopRequested()) {
+            // Try to get work
+            auto workItem = m_queue->getNextWork();
+            if (!workItem) {
+                // No more work
+                break;
+            }
+            
+            // Process the work item
+            processItem(*workItem);
+        }
+    }
+    
+private:
+    std::shared_ptr<WorkQueue> m_queue;
+};
+
+// Using the work queue with ThreadPool
+auto workQueue = std::make_shared<WorkQueue>();
+
+// Fill the queue with work
+for (const auto& item : workItems) {
+    workQueue->addWork(item);
+}
+
+// Create worker tasks in the pool
+unsigned int workerCount = ThreadPool::maxThreadCount();
+for (unsigned int i = 0; i < workerCount; i++) {
+    pool->createAndAdd<WorkerTask>(workQueue);
+}
+
+// Execute all workers in parallel
+pool->exec();</code></pre>
+
+        <h2 id="integration">Integration with Other Components</h2>
+        <p>ThreadPool works well with other task library components in a thread-safe manner:</p>
+
+        <ul class="feature-list">
+            <li><strong>Chronometer:</strong> Measure detailed execution time of the pool and individual tasks</li>
+            <li><strong>Logger:</strong> Centralize logging from all tasks in the pool with thread-safe message handling
+            </li>
+            <li><strong>TaskObserver:</strong> Monitor performance metrics across the pool with thread-safe statistics
+            </li>
+            <li><strong>ProgressMonitor:</strong> Track overall progress of complex operations across multiple threads
+            </li>
+            <li><strong>ParallelAlgorithm:</strong> Combine with ThreadPool for nested parallelism with hierarchical
+                task organization</li>
+            <li><strong>Counter:</strong> Track task completions or other metrics in a thread-safe manner</li>
+        </ul>
+
+        <h2 id="summary">Summary</h2>
+        <p>The ThreadPool class provides a robust, thread-safe foundation for parallel task execution in
+            high-performance applications. Its careful design ensures safe execution, cancellation, and monitoring
+            across multiple threads, without imposing excessive synchronization overhead on task implementations.</p>
+
+        <p>By leveraging modern C++ concurrency primitives like futures, atomic operations, and proper thread
+            management, the ThreadPool enables developers to harness the full power of multi-core processors while
+            maintaining code clarity and safety. The integration with the SignalSlot system provides comprehensive
+            monitoring capabilities to track execution progress and performance across all parallel tasks.</p>
+    </section>
+</body>
+
+</html>

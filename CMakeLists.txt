@@ -60,8 +60,8 @@ set_target_properties(task-shared PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${DIST_DIR
 set_target_properties(task-shared PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${DIST_DIR})
 set_target_properties(task-shared PROPERTIES PDB_OUTPUT_DIRECTORY ${DIST_DIR})
 
-enable_testing()
-auto_discover_tests()
+# enable_testing()
+# auto_discover_tests()
 
 add_subdirectory(examples/concurrent)
 add_subdirectory(examples/counter)

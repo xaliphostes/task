@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>If - Task Framework Documentation</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+    <a href="index.html" class="back-link">Back to Index</a>
+
+    <section class="section">
+        <h1>If</h1>
+        <p class="inheritance">Inherits from: Task</p>
+
+        <div class="toc">
+            <h4>Contents</h4>
+            <ul>
+                <li><a href="#overview">Overview</a></li>
+                <li><a href="#features">Features</a></li>
+                <li><a href="#interface">Class Interface</a></li>
+                <li><a href="#signals">Signals</a></li>
+                <li><a href="#usage">Usage Example</a></li>
+                <li><a href="#conditions">Condition Functions</a></li>
+                <li><a href="#async">Asynchronous Execution</a></li>
+                <li><a href="#nesting">Nesting Conditions</a></li>
+                <li><a href="#best-practices">Best Practices</a></li>
+            </ul>
+        </div>
+
+        <div id="overview" class="card">
+            <p>The <code>If</code> class provides a conditional control flow task in the task framework. It evaluates a
+                condition and then executes either a "then" task or an "else" task based on the result. This enables
+                building complex task workflows with conditional branching while maintaining the signal-based
+                communication patterns of the framework.</p>
+        </div>
+
+        <h2 id="features">Features</h2>
+        <ul class="feature-list">
+            <li><strong>Conditional Execution:</strong> Execute different tasks based on runtime conditions</li>
+            <li><strong>Fluent Interface:</strong> Chainable methods for convenient configuration</li>
+            <li><strong>Signal Propagation:</strong> Forward signals from sub-tasks with branch context</li>
+            <li><strong>Asynchronous Support:</strong> Execute conditional logic in background threads</li>
+            <li><strong>Flexible Conditions:</strong> Support for condition functions that can access arguments</li>
+            <li><strong>Execution Reporting:</strong> Signals for condition evaluation and branch selection</li>
+            <li><strong>Branch Monitoring:</strong> Track which branch was executed</li>
+        </ul>
+
+        <h2 id="interface">Class Interface</h2>
+        <pre><code>class If : public Task {
+public:
+    // Type definition for condition functions
+    using ConditionFunction = std::function<bool(const ArgumentPack&)>;
+    
+    // Constructor
+    explicit If(ConditionFunction condition);
+    
+    // Configuration methods (fluent interface)
+    If& then(std::shared_ptr<Task> task);
+    If& else_(std::shared_ptr<Task> task);
+    
+    // Execution methods
+    void execute(const ArgumentPack& args = {});
+    std::future<void> executeAsync(const ArgumentPack& args = {});
+    
+private:
+    ConditionFunction m_condition;
+    std::shared_ptr<Task> m_thenTask;
+    std::shared_ptr<Task> m_elseTask;
+};</code></pre>
+
+        <h2 id="signals">Signals</h2>
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Signal</th>
+                        <th>Type</th>
+                        <th>Description</th>
+                        <th>Arguments</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><code>started</code></td>
+                        <td>Simple</td>
+                        <td>Emitted when execution begins</td>
+                        <td>None</td>
+                    </tr>
+                    <tr>
+                        <td><code>finished</code></td>
+                        <td>Simple</td>
+                        <td>Emitted when execution completes</td>
+                        <td>None</td>
+                    </tr>
+                    <tr>
+                        <td><code>conditionEvaluated</code></td>
+                        <td>Simple</td>
+                        <td>Emitted after condition evaluation</td>
+                        <td>None</td>
+                    </tr>
+                    <tr>
+                        <td><code>branchSelected</code></td>
+                        <td>Data</td>
+                        <td>Reports which branch was selected</td>
+                        <td>bool (result), string (branch name)</td>
+                    </tr>
+                    <tr>
+                        <td><code>thenExecuted</code></td>
+                        <td>Simple</td>
+                        <td>Emitted when the then branch completes</td>
+                        <td>None</td>
+                    </tr>
+                    <tr>
+                        <td><code>elseExecuted</code></td>
+                        <td>Simple</td>
+                        <td>Emitted when the else branch completes</td>
+                        <td>None</td>
+                    </tr>
+                    <tr>
+                        <td><code>noBranchExecuted</code></td>
+                        <td>Simple</td>
+                        <td>Emitted when no branch task was available</td>
+                        <td>None</td>
+                    </tr>
+                    <tr>
+                        <td><code>log</code>, <code>warn</code>, <code>error</code></td>
+                        <td>Data</td>
+                        <td>Standard logging signals</td>
+                        <td>string (message)</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <h2 id="usage">Usage Example</h2>
+        <div class="example-header">Creating and Using an If Task</div>
+        <pre class="example-content"><code>// Creating a conditional task
+auto checkValue = std::make_shared<If>([](const ArgumentPack& args) {
+    // Condition that evaluates whether the first argument > 10
+    if (args.empty()) return false;
+    return args.get<int>(0) > 10;
+});
+
+// Configure the branches
+auto highValueTask = std::make_shared<MyTask>("Process high value");
+auto lowValueTask = std::make_shared<MyTask>("Process low value");
+
+checkValue->then(highValueTask)
+          ->else_(lowValueTask);
+
+// Connect to signals
+checkValue->connectData("branchSelected", [](const ArgumentPack& args) {
+    bool result = args.get<bool>(0);
+    std::string branch = args.get<std::string>(1);
+    std::cout << "Selected branch: " << branch 
+              << " (condition: " << (result ? "true" : "false") << ")" << std::endl;
+});
+
+// Create arguments
+ArgumentPack args;
+args.add<int>(15);  // This will cause the then branch to execute
+
+// Execute the conditional task
+checkValue->execute(args);</code></pre>
+
+        <h2 id="conditions">Condition Functions</h2>
+        <p>The condition function determines which branch is executed. Here are several examples:</p>
+
+        <div class="example-header">Condition Function Examples</div>
+        <pre class="example-content"><code>// Simple condition based on arguments
+auto condition1 = [](const ArgumentPack& args) {
+    return args.get<int>(0) > 10;
+};
+
+// Condition that captures external state
+int threshold = 5;
+auto condition2 = [threshold](const ArgumentPack& args) {
+    return args.get<int>(0) > threshold;
+};
+
+// Condition that doesn't use arguments
+auto condition3 = [](const ArgumentPack&) {
+    return std::time(nullptr) % 2 == 0;  // Condition based on current time
+};
+
+// Condition that uses a component's state
+auto counter = std::make_shared<Counter>(0, 0, 100);
+auto condition4 = [counter](const ArgumentPack&) {
+    return counter->getValue() > 50;
+};</code></pre>
+
+        <h2 id="async">Asynchronous Execution</h2>
+        <p>The If task supports asynchronous execution for non-blocking operations:</p>
+
+        <div class="example-header">Asynchronous Execution</div>
+        <pre class="example-content"><code>// Create arguments
+ArgumentPack args;
+args.add<int>(5);  // This will cause the else branch to execute
+
+// Execute asynchronously
+std::future<void> future = conditionalTask->executeAsync(args);
+
+// Do other work while the conditional task executes
+// ...
+
+// Wait for completion when needed
+future.wait();</code></pre>
+
+        <h2 id="nesting">Nesting Conditional Tasks</h2>
+        <p>Conditional tasks can be nested to create complex decision trees:</p>
+
+        <div class="example-header">Nested Conditions</div>
+        <pre class="example-content"><code>// Create outer condition
+auto outerCondition = std::make_shared<If>([](const ArgumentPack& args) {
+    return args.get<int>(0) > 0;
+});
+
+// Create inner condition (for positive numbers)
+auto innerCondition = std::make_shared<If>([](const ArgumentPack& args) {
+    return args.get<int>(0) > 10;
+});
+
+// Configure inner condition
+auto highValueTask = std::make_shared<MyTask>("High value");
+auto mediumValueTask = std::make_shared<MyTask>("Medium value");
+innerCondition->then(highValueTask)
+              ->else_(mediumValueTask);
+
+// Configure outer condition
+auto negativeValueTask = std::make_shared<MyTask>("Negative value");
+outerCondition->then(innerCondition)  // Use inner condition as the then branch
+              ->else_(negativeValueTask);
+
+// Execute the nested conditions
+ArgumentPack args;
+args.add<int>(15);  // Will execute highValueTask
+outerCondition->execute(args);</code></pre>
+
+        <h2>Integration with ThreadPool</h2>
+        <p>The If task integrates seamlessly with the ThreadPool for parallel conditional execution:</p>
+
+        <div class="example-header">Using If with ThreadPool</div>
+        <pre class="example-content"><code>// Create a thread pool
+auto pool = std::make_shared<ThreadPool>();
+
+// Create multiple conditional tasks
+for (int i = 0; i < 5; i++) {
+    // Create condition
+    auto task = std::make_shared<If>([](const ArgumentPack& args) {
+        return args.get<int>(0) % 2 == 0;  // Check if value is even
+    });
+    
+    // Configure branches
+    auto thenTask = std::make_shared<MyTask>("EvenProcessor-" + std::to_string(i));
+    auto elseTask = std::make_shared<MyTask>("OddProcessor-" + std::to_string(i));
+    
+    task->then(thenTask)
+        ->else_(elseTask);
+    
+    // Add to thread pool with arguments
+    pool->add(std::make_shared<Runnable>([task, i]() {
+        ArgumentPack args;
+        args.add<int>(i);
+        task->execute(args);
+    }));
+}
+
+// Execute all tasks in parallel
+pool->exec();</code></pre>
+
+        <h2 id="best-practices">Best Practices</h2>
+        <ul class="feature-list">
+            <li><strong>Keep Conditions Simple:</strong> Focus on evaluation, avoid complex processing in condition
+                functions</li>
+            <li><strong>Use Appropriate Task Types:</strong> Choose the right type of task for each branch based on
+                requirements</li>
+            <li><strong>Handle Branch Absence:</strong> Be prepared for cases where a branch might not be defined</li>
+            <li><strong>Signal Connections:</strong> Connect to the branchSelected signal for monitoring execution paths
+            </li>
+            <li><strong>Error Handling:</strong> Connect to error signals to detect and handle problems</li>
+            <li><strong>Resource Management:</strong> Ensure branch tasks are properly managed (e.g., using shared_ptr)
+            </li>
+            <li><strong>Argument Passing:</strong> Design ArgumentPack contents to provide all necessary data for
+                conditions and branches</li>
+            <li><strong>Signal Forwarding:</strong> Be aware that signals from branch tasks are forwarded with
+                appropriate prefixes</li>
+        </ul>
+
+        <div class="note">
+            <strong>Note:</strong> The If task is particularly useful for implementing dynamic workflows where execution
+            paths depend on runtime conditions. It can be combined with other task components like For, Counter, and
+            ThreadPool to create sophisticated control flows.
+        </div>
+    </section>
+</body>
+
+</html>

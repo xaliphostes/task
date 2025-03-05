@@ -1,0 +1,567 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ProgressMonitor - Task Framework Documentation</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+    <a href="index.html" class="back-link">Back to Index</a>
+
+    <section class="section">
+        <h1>ProgressMonitor</h1>
+        <p class="inheritance">Inherits from <a href="task.html">Task</a></p>
+
+        <div class="toc">
+            <h4>Contents</h4>
+            <ul>
+                <li><a href="#overview">Overview</a></li>
+                <li><a href="#features">Features</a></li>
+                <li><a href="#interface">Class Interface</a></li>
+                <li><a href="#signals">Signals</a></li>
+                <li><a href="#usage">Usage Examples</a></li>
+                <li><a href="#how-it-works">How It Works</a></li>
+                <li><a href="#progress-calculation">Progress Calculation Methods</a></li>
+                <li><a href="#use-cases">Use Cases</a></li>
+                <li><a href="#milestones">Milestone Management</a></li>
+                <li><a href="#task-monitoring">Task Lifecycle Monitoring</a></li>
+                <li><a href="#thread-safety">Thread Safety</a></li>
+                <li><a href="#best-practices">Best Practices</a></li>
+                <li><a href="#implementation">Implementation Details</a></li>
+            </ul>
+        </div>
+
+        <div id="overview" class="card">
+            <p>The <code>ProgressMonitor</code> class is a specialized task that tracks and responds to progress events
+                across multiple tasks. It provides a central mechanism for monitoring task execution progress,
+                consolidating progress information, and generating notifications when significant milestones are
+                reached.</p>
+        </div>
+
+        <h2 id="features">Features</h2>
+        <ul class="feature-list">
+            <li><strong>Centralized Progress Tracking:</strong> Monitors progress across multiple tasks from a single
+                point</li>
+            <li><strong>Milestone Notifications:</strong> Emits signals when significant progress thresholds are reached
+            </li>
+            <li><strong>Task Execution Monitoring:</strong> Tracks task starts, completions, and failures</li>
+            <li><strong>Aggregated Progress Calculation:</strong> Computes overall progress across multiple tasks</li>
+            <li><strong>Custom Milestone Definition:</strong> Configurable progress thresholds for notifications</li>
+            <li><strong>Summary Generation:</strong> Produces consolidated execution reports and statistics</li>
+            <li><strong>Thread-Safe Operation:</strong> Safe for monitoring tasks running in different threads</li>
+            <li><strong>Flexible Configuration:</strong> Adjustable settings for task count and milestone intervals</li>
+        </ul>
+
+        <h2 id="interface">Class Interface</h2>
+        <pre><code>class ProgressMonitor : public Task {
+public:
+    // Constructor
+    ProgressMonitor(float milestoneStep = 0.25f);
+    
+    // Event handlers
+    void onProgress(const ArgumentPack& args);
+    void onTaskStarted();
+    void onTaskFinished();
+    void onTaskError(const ArgumentPack& args);
+    
+    // Configuration
+    void setTaskCount(int count);
+    void setMilestoneStep(float step);
+    void resetProgress();
+    
+    // Status methods
+    float getOverallProgress() const;
+    int getStartedTaskCount() const;
+    int getCompletedTaskCount() const;
+    int getFailedTaskCount() const;
+    bool isComplete() const;
+    
+    // Milestone management
+    void addCustomMilestone(float milestone, const std::string& name);
+    void clearCustomMilestones();
+};</code></pre>
+
+        <h2 id="signals">Signals</h2>
+        <p>ProgressMonitor emits the following signals:</p>
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Signal</th>
+                        <th>Description</th>
+                        <th>Arguments</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><code>progressUpdated</code></td>
+                        <td>When overall progress changes</td>
+                        <td>overallProgress, completedTasks, totalTasks</td>
+                    </tr>
+                    <tr>
+                        <td><code>milestoneReached</code></td>
+                        <td>When a progress milestone is reached</td>
+                        <td>milestoneName, milestoneValue, overallProgress</td>
+                    </tr>
+                    <tr>
+                        <td><code>allTasksComplete</code></td>
+                        <td>When all tasks have completed</td>
+                        <td>totalTasks, successCount, failureCount, totalTimeMs</td>
+                    </tr>
+                    <tr>
+                        <td><code>summary</code></td>
+                        <td>When a progress summary is generated</td>
+                        <td>taskCount, completedCount, failedCount, overallProgress</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <h2 id="usage">Usage Examples</h2>
+
+        <h3>Basic Progress Monitoring</h3>
+        <div class="example-header">Monitor Multiple Tasks</div>
+        <pre class="example-content"><code>// Create a progress monitor
+auto progressMonitor = std::make_shared&lt;ProgressMonitor&gt;();
+
+// Set the total number of tasks to monitor
+progressMonitor->setTaskCount(5);
+
+// Connect to milestone signals
+progressMonitor->connectData("milestoneReached", [](const ArgumentPack& args) {
+    std::string milestoneName = args.get&lt;std::string&gt;(0);
+    float progress = args.get&lt;float&gt;(2);
+    
+    std::cout << "Milestone reached: " << milestoneName 
+              << " (" << (progress * 100) << "%)" << std::endl;
+});
+
+// Connect to completion signal
+progressMonitor->connectData("allTasksComplete", [](const ArgumentPack& args) {
+    int totalTasks = args.get&lt;int&gt;(0);
+    int successCount = args.get&lt;int&gt;(1);
+    int64_t totalTimeMs = args.get&lt;int64_t&gt;(3);
+    
+    std::cout << "All tasks completed: " << successCount << "/" << totalTasks
+              << " succeeded in " << totalTimeMs << "ms" << std::endl;
+});
+
+// Connect tasks to the monitor
+for (auto& task : tasks) {
+    // Connect task signals to monitor handlers
+    task->connectSimple("started", progressMonitor.get(), &ProgressMonitor::onTaskStarted);
+    task->connectSimple("finished", progressMonitor.get(), &ProgressMonitor::onTaskFinished);
+    task->connectData("error", progressMonitor.get(), &ProgressMonitor::onTaskError);
+    task->connectData("progress", progressMonitor.get(), &ProgressMonitor::onProgress);
+}
+
+// Add custom milestones if needed
+progressMonitor->addCustomMilestone(0.5f, "Halfway Point");
+progressMonitor->addCustomMilestone(0.9f, "Almost Complete");
+
+// Get current progress information
+float currentProgress = progressMonitor->getOverallProgress();
+int completedTasks = progressMonitor->getCompletedTaskCount();</code></pre>
+
+        <h3>With ThreadPool Integration</h3>
+        <div class="example-header">Monitoring ThreadPool Progress</div>
+        <pre class="example-content"><code>// Create a thread pool and progress monitor
+auto pool = std::make_shared&lt;ThreadPool&gt;();
+auto monitor = std::make_shared&lt;ProgressMonitor&gt;();
+
+// Add tasks to the pool
+for (int i = 0; i < 10; i++) {
+    auto task = pool->createAndAdd&lt;MyTask&gt;("Task " + std::to_string(i), i * 100);
+    
+    // Connect task signals to the monitor
+    task->connectSimple("started", monitor.get(), &ProgressMonitor::onTaskStarted);
+    task->connectSimple("finished", monitor.get(), &ProgressMonitor::onTaskFinished);
+    task->connectData("error", monitor.get(), &ProgressMonitor::onTaskError);
+    task->connectData("progress", monitor.get(), &ProgressMonitor::onProgress);
+}
+
+// Set the expected task count
+monitor->setTaskCount(10);
+
+// Connect to milestone signals for updates
+monitor->connectData("milestoneReached", [](const ArgumentPack& args) {
+    std::string milestoneName = args.get&lt;std::string&gt;(0);
+    float progress = args.get&lt;float&gt;(2);
+    
+    // Update UI with progress
+    updateProgressBar(progress);
+    showMilestoneNotification(milestoneName, progress);
+});
+
+// Connect to completion signal for final status
+monitor->connectData("allTasksComplete", [](const ArgumentPack& args) {
+    int totalTasks = args.get&lt;int&gt;(0);
+    int successCount = args.get&lt;int&gt;(1);
+    int failureCount = args.get&lt;int&gt;(2);
+    int64_t totalTimeMs = args.get&lt;int64_t&gt;(3);
+    
+    // Show completion dialog
+    showCompletionDialog(successCount, failureCount, totalTimeMs);
+});
+
+// Run all tasks
+pool->exec();</code></pre>
+
+        <h3>Custom Progress Monitoring</h3>
+        <div class="example-header">Custom Milestones and Weighted Progress</div>
+        <pre class="example-content"><code>// Create a progress monitor with custom milestone step
+auto monitor = std::make_shared&lt;ProgressMonitor&gt;(0.1f); // 10% steps
+
+// Add specific named milestones
+monitor->addCustomMilestone(0.25f, "Quarter Complete");
+monitor->addCustomMilestone(0.5f, "Halfway Point");
+monitor->addCustomMilestone(0.75f, "Three-quarters Complete");
+monitor->addCustomMilestone(0.95f, "Almost Finished");
+monitor->addCustomMilestone(1.0f, "Complete");
+
+// Connect milestone signal to UI updates
+monitor->connectData("milestoneReached", [](const ArgumentPack& args) {
+    std::string milestoneName = args.get&lt;std::string&gt;(0);
+    float milestoneValue = args.get&lt;float&gt;(1);
+    
+    // Update UI
+    updateProgressUI(milestoneValue, milestoneName);
+    
+    // Log the milestone
+    std::cout << "Milestone: " << milestoneName << " at " 
+              << (milestoneValue * 100) << "%" << std::endl;
+});
+
+// Connect progress updates for continuous UI feedback
+monitor->connectData("progressUpdated", [](const ArgumentPack& args) {
+    float progress = args.get&lt;float&gt;(0);
+    updateProgressBar(progress);
+});
+
+// Set up tasks with different weights
+// Complex tasks will contribute more to overall progress
+setTasksWithWeights(monitor);</code></pre>
+
+        <h2 id="how-it-works">How It Works</h2>
+        <p>The ProgressMonitor operates through the following mechanisms:</p>
+
+        <h3>1. Task Registration</h3>
+        <ul class="feature-list">
+            <li>Set the total number of tasks expected with <code>setTaskCount()</code></li>
+            <li>Connect task signals to monitor handler methods</li>
+        </ul>
+
+        <h3>2. Progress Tracking</h3>
+        <ul class="feature-list">
+            <li>When a task reports progress, <code>onProgress()</code> updates its tracking</li>
+            <li>Overall progress is calculated based on individual task progress</li>
+            <li>Aggregated progress is calculated as an average of all task progress</li>
+        </ul>
+
+        <h3>3. Milestone Detection</h3>
+        <ul class="feature-list">
+            <li>Standard milestones are tracked at configurable intervals (default: 25%, 50%, 75%, 100%)</li>
+            <li>Custom milestones can be added for application-specific thresholds</li>
+            <li>When progress crosses a milestone, the <code>milestoneReached</code> signal is emitted</li>
+        </ul>
+
+        <h3>4. Task Lifecycle Monitoring</h3>
+        <ul class="feature-list">
+            <li><code>onTaskStarted()</code> tracks when tasks begin execution</li>
+            <li><code>onTaskFinished()</code> records successful completions</li>
+            <li><code>onTaskError()</code> records failed tasks</li>
+        </ul>
+
+        <h3>5. Completion Detection</h3>
+        <ul class="feature-list">
+            <li>When all expected tasks have completed (success or failure)</li>
+            <li>The <code>allTasksComplete</code> signal is emitted with summary information</li>
+        </ul>
+
+        <div class="example-header">Progress Tracking Internals</div>
+        <pre class="example-content"><code>void ProgressMonitor::onProgress(const ArgumentPack& args) {
+    // Extract progress value from args (typically 0.0 to 1.0)
+    float taskProgress = args.get&lt;float&gt;(0);
+    
+    // Get task ID or use a default identifier
+    std::string taskId = "task_" + std::to_string(m_taskProgressMap.size());
+    if (args.size() > 1) {
+        taskId = args.get&lt;std::string&gt;(1);
+    }
+    
+    // Update progress for this task
+    m_taskProgressMap[taskId] = taskProgress;
+    
+    // Calculate aggregate progress
+    calculateOverallProgress();
+    
+    // Check if we've crossed any milestones
+    checkMilestones();
+}</code></pre>
+
+        <h2 id="progress-calculation">Progress Calculation Methods</h2>
+        <p>ProgressMonitor supports multiple methods for calculating overall progress:</p>
+
+        <h3>1. Average Progress (default)</h3>
+        <div class="example-header">Average Progress Calculation</div>
+        <pre class="example-content"><code>float ProgressMonitor::calculateAverageProgress() const {
+    if (m_taskProgressMap.empty()) {
+        return 0.0f;
+    }
+    
+    float totalProgress = 0.0f;
+    
+    // Sum all task progress values
+    for (const auto& [taskId, progress] : m_taskProgressMap) {
+        totalProgress += progress;
+    }
+    
+    // Return average progress
+    return totalProgress / m_taskProgressMap.size();
+}</code></pre>
+
+        <h3>2. Weighted Progress</h3>
+        <div class="example-header">Weighted Progress Calculation</div>
+        <pre class="example-content"><code>float ProgressMonitor::calculateWeightedProgress() const {
+    if (m_taskWeights.empty()) {
+        // Fall back to average if no weights defined
+        return calculateAverageProgress();
+    }
+    
+    float totalProgress = 0.0f;
+    float totalWeight = 0.0f;
+    
+    // Sum weighted progress values
+    for (const auto& [taskId, progress] : m_taskProgressMap) {
+        float weight = m_taskWeights.count(taskId) ? m_taskWeights.at(taskId) : 1.0f;
+        totalProgress += progress * weight;
+        totalWeight += weight;
+    }
+    
+    // Return weighted average
+    return totalWeight > 0.0f ? totalProgress / totalWeight : 0.0f;
+}</code></pre>
+
+        <h3>3. Completion Counting</h3>
+        <div class="example-header">Task Completion Progress</div>
+        <pre class="example-content"><code>float ProgressMonitor::calculateCompletionProgress() const {
+    // Count completed tasks (progress == 1.0)
+    int completedCount = 0;
+    for (const auto& [taskId, progress] : m_taskProgressMap) {
+        if (progress >= 0.99f) { // Allow for floating-point imprecision
+            completedCount++;
+        }
+    }
+    
+    // Return proportion of completed tasks
+    return m_totalTaskCount > 0 ? 
+        static_cast&lt;float&gt;(completedCount) / m_totalTaskCount : 0.0f;
+}</code></pre>
+
+        <h2 id="use-cases">Use Cases</h2>
+        <p>ProgressMonitor is particularly useful for:</p>
+
+        <h3>1. Complex Operations</h3>
+        <p>Tracking progress across multi-stage operations such as:</p>
+        <ul class="feature-list">
+            <li>Multi-step data processing pipelines</li>
+            <li>Complex workflows with multiple independent tasks</li>
+            <li>Staged operations like import/process/export sequences</li>
+        </ul>
+
+        <h3>2. UI Progress Bars</h3>
+        <p>Providing accurate progress information to users during lengthy operations:</p>
+        <ul class="feature-list">
+            <li>Application loading sequences</li>
+            <li>File processing operations</li>
+            <li>Network operations with multiple requests</li>
+        </ul>
+
+        <h3>3. Batch Processing</h3>
+        <p>Monitoring and reporting on batch job progress:</p>
+        <ul class="feature-list">
+            <li>Bulk file operations</li>
+            <li>Database batch updates</li>
+            <li>Media processing queues</li>
+        </ul>
+
+        <h3>4. ETL Workflows</h3>
+        <p>Tracking data extraction, transformation, and loading progress:</p>
+        <ul class="feature-list">
+            <li>Data import stages</li>
+            <li>Transformation steps</li>
+            <li>Output generation and validation</li>
+        </ul>
+
+        <h3>5. Installation/Update Processes</h3>
+        <p>Monitoring multi-step installation processes:</p>
+        <ul class="feature-list">
+            <li>Download, extract, configure, install sequences</li>
+            <li>System updates with multiple components</li>
+            <li>Software deployment across multiple targets</li>
+        </ul>
+
+        <h2 id="milestones">Milestone Management</h2>
+        <p>ProgressMonitor provides flexible milestone configuration:</p>
+
+        <h3>Standard Milestones</h3>
+        <p>By default, ProgressMonitor tracks these milestones:</p>
+        <ul class="feature-list">
+            <li>25% complete (0.25)</li>
+            <li>50% complete (0.50)</li>
+            <li>75% complete (0.75)</li>
+            <li>100% complete (1.00)</li>
+        </ul>
+
+        <h3>Custom Milestones</h3>
+        <p>Application-specific milestones can be added:</p>
+
+        <div class="example-header">Adding Custom Milestones</div>
+        <pre class="example-content"><code>// Configure milestones for detailed tracking
+void setupDetailedMilestones(std::shared_ptr&lt;ProgressMonitor&gt; monitor) {
+    // Clear default milestones
+    monitor->clearCustomMilestones();
+    
+    // Add fine-grained milestones
+    monitor->addCustomMilestone(0.10f, "Initial Setup");
+    monitor->addCustomMilestone(0.20f, "Data Validation");
+    monitor->addCustomMilestone(0.30f, "Processing Started");
+    monitor->addCustomMilestone(0.40f, "Preliminary Results");
+    monitor->addCustomMilestone(0.50f, "Halfway Point");
+    monitor->addCustomMilestone(0.60f, "Secondary Processing");
+    monitor->addCustomMilestone(0.70f, "Optimization Phase");
+    monitor->addCustomMilestone(0.80f, "Final Calculations");
+    monitor->addCustomMilestone(0.90f, "Verification Stage");
+    monitor->addCustomMilestone(0.95f, "Finalizing Results");
+    monitor->addCustomMilestone(1.00f, "Complete");
+}</code></pre>
+
+        <h3>Milestone Step Configuration</h3>
+        <p>The default milestone interval can be adjusted:</p>
+
+        <div class="example-header">Changing Milestone Steps</div>
+        <pre class="example-content"><code>// Create monitor with 10% milestone steps
+auto monitor = std::make_shared&lt;ProgressMonitor&gt;(0.1f);
+
+// Or adjust after creation
+monitor->setMilestoneStep(0.05f);  // 5% steps (very fine-grained)</code></pre>
+
+        <h2 id="task-monitoring">Task Lifecycle Monitoring</h2>
+        <p>ProgressMonitor tracks the full lifecycle of tasks:</p>
+
+        <h3>Task Started</h3>
+        <div class="example-header">Task Start Tracking</div>
+        <pre class="example-content"><code>void ProgressMonitor::onTaskStarted() {
+    m_startedTaskCount++;
+    
+    // Record start time if this is the first task
+    if (m_startedTaskCount == 1) {
+        m_startTime = std::chrono::steady_clock::now();
+    }
+    
+    // Emit status update
+    ArgumentPack args;
+    args.add&lt;int&gt;(m_startedTaskCount);
+    args.add&lt;int&gt;(m_totalTaskCount);
+    emit("taskStarted", args);
+}</code></pre>
+
+        <h3>Task Finished</h3>
+        <div class="example-header">Task Completion Tracking</div>
+        <pre class="example-content"><code>void ProgressMonitor::onTaskFinished() {
+    m_completedTaskCount++;
+    
+    // Check if all tasks are now complete
+    if (isComplete()) {
+        // Calculate total execution time
+        auto now = std::chrono::steady_clock::now();
+        auto duration = std::chrono::duration_cast&lt;std::chrono::milliseconds&gt;(
+            now - m_startTime).count();
+        
+        // Emit completion signal with summary data
+        ArgumentPack args;
+        args.add&lt;int&gt;(m_totalTaskCount);
+        args.add&lt;int&gt;(m_completedTaskCount);
+        args.add&lt;int&gt;(m_failedTaskCount);
+        args.add&lt;int64_t&gt;(duration);
+        emit("allTasksComplete", args);
+    }
+}</code></pre>
+
+        <h3>Task Failed</h3>
+        <div class="example-header">Task Failure Tracking</div>
+        <pre class="example-content"><code>void ProgressMonitor::onTaskError(const ArgumentPack& args) {
+    m_failedTaskCount++;
+    
+    // Extract error message if available
+    std::string errorMsg = "Unknown error";
+    if (!args.empty()) {
+        errorMsg = args.get&lt;std::string&gt;(0);
+    }
+    
+    // Log the failure
+    ArgumentPack errorArgs;
+    errorArgs.add&lt;std::string&gt;(errorMsg);
+    errorArgs.add&lt;int&gt;(m_failedTaskCount);
+    emit("taskFailed", errorArgs);
+    
+    // Check if all tasks are now complete (success + failure = total)
+    if (isComplete()) {
+        onTaskFinished(); // Reuse completion logic
+    }
+}</code></pre>
+
+        <h2 id="thread-safety">Thread Safety</h2>
+        <p>ProgressMonitor is designed to be thread-safe:</p>
+        <ul class="feature-list">
+            <li>Progress map updates are protected by mutex locks</li>
+            <li>Task count modifications are atomic</li>
+            <li>Milestone checks are performed in a thread-safe manner</li>
+            <li>Signal emissions are thread-safe through the SignalSlot system</li>
+        </ul>
+
+        <div class="note">
+            <strong>Note:</strong> While the ProgressMonitor itself is thread-safe, be careful to ensure that UI updates
+            triggered by its signals are performed in a thread-safe manner appropriate to your UI framework.
+        </div>
+
+        <h2 id="best-practices">Best Practices</h2>
+        <ul class="feature-list">
+            <li><strong>Set Task Count Early:</strong> Initialize with the correct number of expected tasks</li>
+            <li><strong>Connect All Signals:</strong> Ensure all tasks connect their progress and lifecycle signals</li>
+            <li><strong>Custom Milestones:</strong> Add application-specific milestones based on user expectations</li>
+            <li><strong>Handle Task Failures:</strong> Use error handling to ensure progress reporting is accurate even
+                when tasks fail</li>
+            <li><strong>Reset Between Operations:</strong> Call <code>resetProgress()</code> when starting a new batch
+                of tasks</li>
+            <li><strong>Weighted Progress:</strong> Use task weights for more accurate progress when tasks have
+                different complexities</li>
+            <li><strong>UI Updates:</strong> Keep UI update handlers lightweight to avoid blocking the progress
+                monitoring</li>
+            <li><strong>Progress Validation:</strong> Validate that reported progress values are within the expected
+                range (0.0 to 1.0)</li>
+        </ul>
+
+        <h2 id="implementation">Implementation Details</h2>
+        <ul class="feature-list">
+            <li>Uses a map to track individual task progress</li>
+            <li>Calculates weighted progress based on task complexity if configured</li>
+            <li>Detects and reports milestone crossings only once</li>
+            <li>Maintains accurate statistics even when tasks fail</li>
+            <li>Thread-safe implementation with mutex protection where needed</li>
+            <li>Optimized for minimal overhead on task execution</li>
+            <li>Supports multiple progress calculation strategies</li>
+            <li>Tracks execution time for performance monitoring</li>
+        </ul>
+
+        <div class="note">
+            <strong>Implementation Note:</strong> ProgressMonitor is designed to have minimal impact on task
+            performance. It only performs calculations when progress is reported, not continuously polling.
+        </div>
+    </section>
+</body>
+
+</html>

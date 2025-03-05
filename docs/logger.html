@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Logger - Task Framework Documentation</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+    <a href="index.html" class="back-link">Back to Index</a>
+
+    <section class="section">
+        <h1>Logger</h1>
+        <p class="inheritance">Inherits from <a href="task.html">Task</a></p>
+
+        <div class="toc">
+            <h4>Contents</h4>
+            <ul>
+                <li><a href="#overview">Overview</a></li>
+                <li><a href="#features">Features</a></li>
+                <li><a href="#interface">Class Interface</a></li>
+                <li><a href="#methods">Logging Methods</a></li>
+                <li><a href="#usage">Usage Examples</a></li>
+                <li><a href="#integration">Integration with Other Components</a></li>
+                <li><a href="#configuration">Configuration Options</a></li>
+                <li><a href="#signal-creation">Signal Creation for Tasks</a></li>
+                <li><a href="#formatting">Message Formatting</a></li>
+                <li><a href="#thread-safety">Thread Safety</a></li>
+                <li><a href="#best-practices">Best Practices</a></li>
+                <li><a href="#implementation">Implementation Details</a></li>
+            </ul>
+        </div>
+
+        <div id="overview" class="card">
+            <p>The <code>Logger</code> class provides a centralized logging facility for the task framework. It extends
+                the base <code>Task</code> class to integrate with the signal-slot system, handling log messages from
+                various components and formatting them for output. The Logger supports different message levels (log,
+                warning, error) and can be connected to multiple tasks for comprehensive application-wide logging.</p>
+        </div>
+
+        <h2 id="features">Features</h2>
+        <ul class="feature-list">
+            <li><strong>Multiple Log Levels:</strong> Support for regular logs, warnings, and errors with appropriate
+                formatting</li>
+            <li><strong>Customizable Prefix:</strong> Configurable message prefix for easy identification of log sources
+            </li>
+            <li><strong>Visual Formatting:</strong> Color-coded output for different message types</li>
+            <li><strong>Central Connection Point:</strong> Can be connected to multiple components for centralized
+                logging</li>
+            <li><strong>Signal Creation Helper:</strong> Utility methods to create standard logging signals for tasks
+            </li>
+            <li><strong>Thread Safety:</strong> Safe for concurrent access from multiple threads</li>
+            <li><strong>Error Handling:</strong> Robust handling of malformed log message formats</li>
+            <li><strong>Signal Infrastructure:</strong> Inherits the Task framework's signal-slot capabilities</li>
+        </ul>
+
+        <h2 id="interface">Class Interface</h2>
+        <pre><code>class Logger : public Task {
+public:
+    // Constructor with optional prefix
+    explicit Logger(const std::string &prefix = ">>");
+    virtual ~Logger() = default;
+
+    // Logging methods
+    void log(const ArgumentPack &args);
+    void warn(const ArgumentPack &args);
+    void error(const ArgumentPack &args);
+
+    // Static helper to create logging signals for a task
+    static void createSignalsFor(Task *task);
+
+    // Connect to all signals of a task
+    void connectAllSignalsTo(Task *task);
+    void connectAllSignalsTo(const std::vector&lt;Task *&gt; &tasks);
+
+private:
+    std::string m_prefix;
+};</code></pre>
+
+        <h2 id="methods">Logging Methods</h2>
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Method</th>
+                        <th>Description</th>
+                        <th>Format</th>
+                        <th>Use Case</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><code>log()</code></td>
+                        <td>Regular informational messages</td>
+                        <td>Standard console output</td>
+                        <td>General information, status updates</td>
+                    </tr>
+                    <tr>
+                        <td><code>warn()</code></td>
+                        <td>Warning messages</td>
+                        <td>Yellow colored text</td>
+                        <td>Potential issues, non-critical problems</td>
+                    </tr>
+                    <tr>
+                        <td><code>error()</code></td>
+                        <td>Error messages</td>
+                        <td>Red colored text</td>
+                        <td>Critical errors, failure conditions</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <h2 id="usage">Usage Examples</h2>
+
+        <h3>Basic Logging</h3>
+        <div class="example-header">Direct Use of Logger</div>
+        <pre class="example-content"><code>// Create a logger with a custom prefix
+auto logger = std::make_shared&lt;Logger&gt;("MyApp");
+
+// Log different types of messages
+ArgumentPack infoArgs;
+infoArgs.add&lt;std::string&gt;("Application started successfully");
+logger->log(infoArgs);
+
+ArgumentPack warnArgs;
+warnArgs.add&lt;std::string&gt;("Configuration file not found, using defaults");
+logger->warn(warnArgs);
+
+ArgumentPack errorArgs;
+errorArgs.add&lt;std::string&gt;("Failed to connect to database: Connection refused");
+logger->error(errorArgs);
+
+// Output:
+// MyApp Application started successfully
+// MyApp WARNING: Configuration file not found, using defaults
+// MyApp ERROR: Failed to connect to database: Connection refused</code></pre>
+
+        <h3>Connecting Logger to Tasks</h3>
+        <div class="example-header">Centralized Logging for Multiple Components</div>
+        <pre class="example-content"><code>// Create a logger
+auto logger = std::make_shared&lt;Logger&gt;("System");
+
+// Create various components
+auto algorithm = std::make_shared&lt;MyAlgorithm&gt;();
+auto counter = std::make_shared&lt;Counter&gt;(0, 0, 100);
+auto threadPool = std::make_shared&lt;ThreadPool&gt;();
+
+// Connect logger to all components
+logger->connectAllSignalsTo(algorithm.get());
+logger->connectAllSignalsTo(counter.get());
+logger->connectAllSignalsTo(threadPool.get());
+
+// Add tasks to thread pool
+threadPool->createAndAdd&lt;MyTask&gt;("Task1", 100);
+threadPool->createAndAdd&lt;MyTask&gt;("Task2", 200);
+
+// Execute thread pool - all logging goes through the logger
+threadPool->exec();
+
+// Output example:
+// System Thread pool executing 2 tasks
+// System Task1 started
+// System Task2 started
+// System Task1 completed successfully
+// System Task2 completed successfully
+// System Thread pool execution finished in 201ms</code></pre>
+
+        <h3>Custom Logging Setup</h3>
+        <div class="example-header">Configuring Logger for Specific Components</div>
+        <pre class="example-content"><code>// Create specialized loggers for different subsystems
+auto systemLogger = std::make_shared&lt;Logger&gt;("SYSTEM");
+auto networkLogger = std::make_shared&lt;Logger&gt;("NETWORK");
+auto dataLogger = std::make_shared&lt;Logger&gt;("DATA");
+
+// Create components
+auto networkComponent = std::make_shared&lt;NetworkHandler&gt;();
+auto dataProcessor = std::make_shared&lt;DataProcessor&gt;();
+auto systemMonitor = std::make_shared&lt;SystemMonitor&gt;();
+
+// Connect specialized loggers to appropriate components
+networkLogger->connectAllSignalsTo(networkComponent.get());
+dataLogger->connectAllSignalsTo(dataProcessor.get());
+systemLogger->connectAllSignalsTo(systemMonitor.get());
+
+// Example output:
+// NETWORK Connection established with server at 192.168.1.100
+// DATA Processing 1024 records from dataset
+// SYSTEM CPU usage: 45%, Memory: 512MB
+// NETWORK WARNING: High latency detected (150ms)
+// DATA ERROR: Invalid record format at position 512</code></pre>
+
+        <h2 id="integration">Integration with Other Components</h2>
+        <p>The Logger class is designed to integrate with all components in the task framework. Here are some common
+            integration patterns:</p>
+
+        <h3>With Algorithm</h3>
+        <div class="example-header">Logging Algorithm Execution</div>
+        <pre class="example-content"><code>// Create logger and algorithm
+auto logger = std::make_shared&lt;Logger&gt;("Processor");
+auto algorithm = std::make_shared&lt;DataProcessor&gt;();
+
+// Connect logger to algorithm
+logger->connectAllSignalsTo(algorithm.get());
+
+// Execute algorithm with logging
+algorithm->exec();
+
+// Typical log output:
+// Processor Starting data processing...
+// Processor Processing file data.csv
+// Processor 25% complete
+// Processor 50% complete
+// Processor 75% complete
+// Processor 100% complete
+// Processor Data processing completed successfully</code></pre>
+
+        <h3>With ThreadPool</h3>
+        <div class="example-header">Logging Parallel Task Execution</div>
+        <pre class="example-content"><code>// Create logger and thread pool
+auto logger = std::make_shared&lt;Logger&gt;("ThreadPool");
+auto pool = std::make_shared&lt;ThreadPool&gt;();
+
+// Connect logger to the thread pool
+logger->connectAllSignalsTo(pool.get());
+
+// Add tasks to the pool
+for (int i = 0; i < 5; i++) {
+    auto task = pool->createAndAdd&lt;MyTask&gt;("Task" + std::to_string(i), i * 100);
+    // Connect logger to each task as well
+    logger->connectAllSignalsTo(task);
+}
+
+// Execute all tasks
+pool->exec();
+
+// Output includes both pool and task logs:
+// ThreadPool Starting execution of 5 tasks
+// ThreadPool Task0 started
+// ThreadPool Task1 started
+// ThreadPool Task2 started
+// ThreadPool Task0 completed
+// ThreadPool Task3 started
+// ThreadPool Task1 completed
+// ThreadPool Task4 started
+// ThreadPool Task2 completed
+// ThreadPool Task3 completed
+// ThreadPool Task4 completed
+// ThreadPool All tasks completed in 450ms</code></pre>
+
+        <h2 id="configuration">Configuration Options</h2>
+        <p>The Logger class provides several configuration options:</p>
+
+        <h3>Custom Prefix</h3>
+        <div class="example-header">Setting a Custom Logger Prefix</div>
+        <pre class="example-content"><code>// Different prefix options
+auto logger1 = std::make_shared&lt;Logger&gt;(">>"); // Default
+auto logger2 = std::make_shared&lt;Logger&gt;("MyApp");
+auto logger3 = std::make_shared&lt;Logger&gt;("[Server]");
+auto logger4 = std::make_shared&lt;Logger&gt;("GUI::");
+
+// Output examples:
+// >> Application message
+// MyApp Application message
+// [Server] Application message
+// GUI:: Application message</code></pre>
+
+        <h2 id="signal-creation">Signal Creation for Tasks</h2>
+        <p>The Logger provides a static helper method to create standard logging signals for Task objects:</p>
+
+        <div class="example-header">Creating Logging Signals</div>
+        <pre class="example-content"><code>// Creating a custom task with logging capabilities
+class MyCustomTask : public Task {
+public:
+    MyCustomTask() {
+        // Create standard logging signals
+        Logger::createSignalsFor(this);
+        
+        // Now the task has log, warn, and error signals
+    }
+    
+    void doSomething() {
+        // Use logging signals
+        emitString("log", "Operation started");
+        
+        try {
+            // Work...
+            
+            emitString("log", "Operation completed");
+        } catch (const std::exception& e) {
+            emitString("error", std::string("Operation failed: ") + e.what());
+        }
+    }
+};</code></pre>
+
+        <p>The <code>createSignalsFor()</code> method creates the following signals for the task:</p>
+        <ul class="feature-list">
+            <li><code>log</code> - For regular informational messages</li>
+            <li><code>warn</code> - For warning messages</li>
+            <li><code>error</code> - For error messages</li>
+        </ul>
+
+        <h2 id="formatting">Message Formatting</h2>
+        <p>The Logger formats messages differently based on their type:</p>
+
+        <div class="example-header">Message Formatting Implementation</div>
+        <pre class="example-content"><code>// Regular log messages
+void Logger::log(const ArgumentPack &args) {
+    if (!args.empty()) {
+        try {
+            std::cout << m_prefix << " " << args.get&lt;std::string&gt;(0)
+                      << std::endl;
+        } catch (const std::bad_cast &) {
+            std::cout << m_prefix << " [invalid format]" << std::endl;
+        }
+    }
+}
+
+// Warning messages (yellow text)
+void Logger::warn(const ArgumentPack &args) {
+    if (!args.empty()) {
+        try {
+            std::cerr << "\033[33m" << m_prefix
+                      << " WARNING: " << args.get&lt;std::string&gt;(0) << "\033[0m"
+                      << std::endl;
+        } catch (const std::bad_cast &) {
+            std::cerr << "\033[33m" << m_prefix
+                      << " WARNING: [invalid format]\033[0m" << std::endl;
+        }
+    }
+}
+
+// Error messages (red text)
+void Logger::error(const ArgumentPack &args) {
+    if (!args.empty()) {
+        try {
+            std::cerr << "\033[31m" << m_prefix
+                      << " ERROR: " << args.get&lt;std::string&gt;(0) << "\033[0m"
+                      << std::endl;
+        } catch (const std::bad_cast &) {
+            std::cerr << "\033[31m" << m_prefix
+                      << " ERROR: [invalid format]\033[0m" << std::endl;
+        }
+    }
+}</code></pre>
+
+        <div class="note">
+            <strong>Note:</strong> The color formatting using ANSI escape codes works in most terminal environments but
+            may not be displayed correctly in all console windows. The Logger will still function correctly, but visual
+            formatting may vary.
+        </div>
+
+        <h2 id="thread-safety">Thread Safety</h2>
+        <p>The Logger class is designed to be thread-safe for concurrent access:</p>
+        <ul class="feature-list">
+            <li>Individual logging operations are atomic</li>
+            <li>Thread-safe signal connections via the inherited SignalSlot implementation</li>
+            <li>Console output is synchronized to prevent interleaved messages</li>
+            <li>ArgumentPack handling is protected against concurrent modification</li>
+        </ul>
+
+        <p>This allows safe logging from multiple threads in parallel applications:</p>
+
+        <div class="example-header">Thread-Safe Logging Example</div>
+        <pre class="example-content"><code>// Create a shared logger
+auto logger = std::make_shared&lt;Logger&gt;("ThreadSafe");
+
+// Create a thread pool with multiple worker threads
+auto pool = std::make_shared&lt;ThreadPool&gt;();
+
+// Add tasks that will log concurrently
+for (int i = 0; i < 10; i++) {
+    auto task = pool->createAndAdd&lt;LoggingTask&gt;(i);
+    
+    // Connect logger to each task
+    logger->connectAllSignalsTo(task);
+}
+
+// Execute all tasks in parallel
+pool->exec();
+
+// All log messages will be properly formatted and synchronized,
+// even though they're coming from multiple threads simultaneously</code></pre>
+
+        <h2 id="best-practices">Best Practices</h2>
+        <ul class="feature-list">
+            <li><strong>Consistent Prefixes:</strong> Use descriptive, consistent prefixes for related components</li>
+            <li><strong>Appropriate Log Levels:</strong> Use log(), warn(), and error() methods for the right message
+                types</li>
+            <li><strong>Centralized Connection:</strong> Connect one logger to multiple components for unified logging
+            </li>
+            <li><strong>Structured Messages:</strong> Include relevant context in log messages (IDs, states, values)
+            </li>
+            <li><strong>Error Handling:</strong> Add try-catch blocks around log message formatting for robustness</li>
+            <li><strong>Signal Creation:</strong> Use createSignalsFor() when creating custom tasks with logging needs
+            </li>
+            <li><strong>Message Brevity:</strong> Keep log messages concise but informative</li>
+            <li><strong>Hierarchical Loggers:</strong> Create multiple loggers for different subsystems when needed</li>
+        </ul>
+
+        <h2 id="implementation">Implementation Details</h2>
+        <ul class="feature-list">
+            <li>Logger inherits from Task to leverage the signal-slot system</li>
+            <li>Messages are emitted to stdout (log) and stderr (warn, error)</li>
+            <li>ANSI escape codes are used for color formatting in terminals</li>
+            <li>Each logging method expects an ArgumentPack with a string as the first argument</li>
+            <li>Invalid message formats are handled gracefully with a fallback message</li>
+            <li>The connectAllSignalsTo() method creates connections to all standard logging signals</li>
+            <li>The static createSignalsFor() method adds standard log signals to any Task object</li>
+        </ul>
+    </section>
+</body>
+
+</html>

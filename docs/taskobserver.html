@@ -1,0 +1,895 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TaskObserver - Task Framework Documentation</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+    <a href="index.html" class="back-link">Back to Index</a>
+
+    <section class="section">
+        <h1>TaskObserver</h1>
+        <p class="inheritance">Inherits from <a href="task.html">Task</a></p>
+
+        <div class="toc">
+            <h4>Contents</h4>
+            <ul>
+                <li><a href="#overview">Overview</a></li>
+                <li><a href="#features">Features</a></li>
+                <li><a href="#interface">Class Interface</a></li>
+                <li><a href="#statistics">Task Statistics Structure</a></li>
+                <li><a href="#signals">Signals</a></li>
+                <li><a href="#usage">Usage Examples</a></li>
+                <li><a href="#how-it-works">How It Works</a></li>
+                <li><a href="#monitoring">Monitoring Capabilities</a></li>
+                <li><a href="#custom-metrics">Custom Metrics</a></li>
+                <li><a href="#analysis">Statistical Analysis</a></li>
+                <li><a href="#benefits">Benefits</a></li>
+                <li><a href="#thread-safety">Thread Safety</a></li>
+                <li><a href="#best-practices">Best Practices</a></li>
+                <li><a href="#implementation">Implementation Details</a></li>
+            </ul>
+        </div>
+
+        <div id="overview" class="card">
+            <p>The <code>TaskObserver</code> class is a powerful monitoring tool for the task library that collects and
+                analyzes statistics about task execution across the system. It provides insights into performance
+                metrics, success rates, and execution patterns of tasks without requiring code changes to the monitored
+                tasks.</p>
+        </div>
+
+        <h2 id="features">Features</h2>
+        <ul class="feature-list">
+            <li><strong>Non-intrusive Monitoring:</strong> Attaches to existing tasks using the signal-slot system</li>
+            <li><strong>Comprehensive Statistics:</strong> Tracks execution counts, timing, success/failure rates</li>
+            <li><strong>Custom Metrics:</strong> Supports application-specific metrics beyond the standard set</li>
+            <li><strong>Performance Analysis:</strong> Identifies slow tasks and execution bottlenecks</li>
+            <li><strong>Status Reporting:</strong> Generates detailed summary reports and real-time updates</li>
+            <li><strong>Execution History:</strong> Maintains historical data about task execution</li>
+            <li><strong>Thread-Safe Monitoring:</strong> Safe for observing tasks across different threads</li>
+            <li><strong>Low Overhead:</strong> Designed for minimal impact on the observed tasks</li>
+        </ul>
+
+        <h2 id="interface">Class Interface</h2>
+        <pre><code>class TaskObserver : public Task {
+public:
+    // Statistics structure for a single task
+    struct TaskStats {
+        std::string taskName;
+        std::string taskType;
+        int executionCount;
+        int successCount;
+        int failureCount;
+        int64_t totalExecutionTimeMs;
+        int64_t minExecutionTimeMs;
+        int64_t maxExecutionTimeMs;
+        std::chrono::system_clock::time_point lastExecutionTime;
+        double lastProgress;
+        std::map&lt;std::string, double&gt; customMetrics;
+    };
+    
+    // Constructor
+    explicit TaskObserver(const std::string& name = "TaskObserver");
+    
+    // Monitoring methods
+    bool attach(Task* task, const std::string& taskName = "");
+    bool detach(Task* task);
+    
+    // Statistics access
+    const TaskStats* getTaskStats(Task* task) const;
+    std::vector&lt;TaskStats&gt; getAllTaskStats() const;
+    void resetAllStats();
+    
+    // Metrics management
+    bool addCustomMetric(Task* task, const std::string& metricName, double value);
+    
+    // Analysis methods
+    double getAverageExecutionTime(Task* task) const;
+    double getSuccessRate(Task* task) const;
+    std::string generateSummaryReport() const;
+};</code></pre>
+
+        <h2 id="statistics">Task Statistics Structure</h2>
+        <p>The <code>TaskStats</code> structure contains comprehensive execution statistics for a single task:</p>
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Field</th>
+                        <th>Type</th>
+                        <th>Description</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><code>taskName</code></td>
+                        <td>std::string</td>
+                        <td>User-provided name or identifier for the task</td>
+                    </tr>
+                    <tr>
+                        <td><code>taskType</code></td>
+                        <td>std::string</td>
+                        <td>The type name of the task class</td>
+                    </tr>
+                    <tr>
+                        <td><code>executionCount</code></td>
+                        <td>int</td>
+                        <td>Total number of times the task has been executed</td>
+                    </tr>
+                    <tr>
+                        <td><code>successCount</code></td>
+                        <td>int</td>
+                        <td>Number of successful task executions</td>
+                    </tr>
+                    <tr>
+                        <td><code>failureCount</code></td>
+                        <td>int</td>
+                        <td>Number of failed task executions</td>
+                    </tr>
+                    <tr>
+                        <td><code>totalExecutionTimeMs</code></td>
+                        <td>int64_t</td>
+                        <td>Total execution time in milliseconds across all runs</td>
+                    </tr>
+                    <tr>
+                        <td><code>minExecutionTimeMs</code></td>
+                        <td>int64_t</td>
+                        <td>Shortest execution time recorded</td>
+                    </tr>
+                    <tr>
+                        <td><code>maxExecutionTimeMs</code></td>
+                        <td>int64_t</td>
+                        <td>Longest execution time recorded</td>
+                    </tr>
+                    <tr>
+                        <td><code>lastExecutionTime</code></td>
+                        <td>time_point</td>
+                        <td>Timestamp of most recent execution</td>
+                    </tr>
+                    <tr>
+                        <td><code>lastProgress</code></td>
+                        <td>double</td>
+                        <td>Most recent progress value reported (0.0-1.0)</td>
+                    </tr>
+                    <tr>
+                        <td><code>customMetrics</code></td>
+                        <td>map</td>
+                        <td>User-defined metrics for application-specific tracking</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <h2 id="signals">Signals</h2>
+        <p>TaskObserver emits the following signals:</p>
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Signal</th>
+                        <th>Description</th>
+                        <th>Arguments</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><code>statsUpdated</code></td>
+                        <td>Emitted when task statistics are updated</td>
+                        <td>taskName, taskType, execCount, successCount, failCount, avgTime</td>
+                    </tr>
+                    <tr>
+                        <td><code>taskStarted</code></td>
+                        <td>Emitted when a monitored task begins execution</td>
+                        <td>taskName, taskType</td>
+                    </tr>
+                    <tr>
+                        <td><code>taskFinished</code></td>
+                        <td>Emitted when a monitored task completes successfully</td>
+                        <td>taskName, taskType, execTimeMs, success</td>
+                    </tr>
+                    <tr>
+                        <td><code>taskFailed</code></td>
+                        <td>Emitted when a monitored task encounters an error</td>
+                        <td>taskName, taskType, errorMsg</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <h2 id="usage">Usage Examples</h2>
+
+        <h3>Basic Monitoring Setup</h3>
+        <div class="example-header">Attaching Observer to Tasks</div>
+        <pre class="example-content"><code>// Create observer
+auto observer = std::make_shared&lt;TaskObserver&gt;("MainObserver");
+
+// Attach to tasks
+observer->attach(myTask, "ImportantTask");
+observer->attach(otherTask);  // Uses type name if no name provided
+
+// Subscribe to observer events
+observer->connectData("statsUpdated", [](const ArgumentPack& args) {
+    std::string taskName = args.get&lt;std::string&gt;(0);
+    int execCount = args.get&lt;int&gt;(2);
+    double avgTime = args.get&lt;double&gt;(5);
+    
+    std::cout << "Task " << taskName << " stats updated: "
+              << execCount << " executions, "
+              << avgTime << "ms average time" << std::endl;
+});
+
+// Add custom metrics
+observer->addCustomMetric(myTask, "MemoryUsageMB", 42.5);
+
+// Get statistics
+auto stats = observer->getTaskStats(myTask);
+if (stats) {
+    std::cout << "Success rate: " 
+              << (static_cast&lt;double&gt;(stats->successCount) / stats->executionCount) * 100.0 
+              << "%" << std::endl;
+}
+
+// Generate a report
+std::string report = observer->generateSummaryReport();
+std::cout << report << std::endl;</code></pre>
+
+        <h3>Performance Monitoring</h3>
+        <div class="example-header">Tracking Execution Performance</div>
+        <pre class="example-content"><code>// Create a performance monitor
+auto perfMonitor = std::make_shared&lt;TaskObserver&gt;("PerformanceMonitor");
+
+// Create a logger to record performance data
+auto logger = std::make_shared&lt;Logger&gt;("Performance");
+
+// Connect observer signals to the logger
+perfMonitor->connectData("taskFinished", [logger](const ArgumentPack& args) {
+    std::string taskName = args.get&lt;std::string&gt;(0);
+    int64_t execTime = args.get&lt;int64_t&gt;(2);
+    
+    // Log performance data
+    ArgumentPack logArgs;
+    logArgs.add&lt;std::string&gt;("Task " + taskName + " completed in " + 
+                           std::to_string(execTime) + " ms");
+    logger->log(logArgs);
+});
+
+// Create and monitor tasks
+auto tasks = createTasks();  // Creates several task instances
+
+// Attach all tasks to the monitor
+for (auto& task : tasks) {
+    perfMonitor->attach(task.get());
+}
+
+// Execute tasks and collect performance data
+executeTasksInSequence(tasks);
+
+// Get performance statistics
+for (auto& task : tasks) {
+    auto stats = perfMonitor->getTaskStats(task.get());
+    if (stats) {
+        std::cout << "Task: " << stats->taskName << "\n"
+                  << "  Avg time: " << (stats->totalExecutionTimeMs / stats->executionCount) << " ms\n"
+                  << "  Min time: " << stats->minExecutionTimeMs << " ms\n"
+                  << "  Max time: " << stats->maxExecutionTimeMs << " ms\n"
+                  << "  Total executions: " << stats->executionCount << std::endl;
+    }
+}</code></pre>
+
+        <h3>Identifying Bottlenecks</h3>
+        <div class="example-header">Performance Analysis for System Tuning</div>
+        <pre class="example-content"><code>// Create a bottleneck analyzer
+auto analyzer = std::make_shared&lt;TaskObserver&gt;("BottleneckAnalyzer");
+
+// Create and attach to all system components
+std::vector&lt;std::shared_ptr&lt;Task&gt;&gt; systemComponents = initializeSystem();
+for (auto& component : systemComponents) {
+    analyzer->attach(component.get());
+}
+
+// Run standard system workload
+runSystemBenchmark();
+
+// Identify slow components
+std::vector&lt;TaskObserver::TaskStats&gt; allStats = analyzer->getAllTaskStats();
+
+// Sort by average execution time (descending)
+std::sort(allStats.begin(), allStats.end(), 
+    [](const TaskObserver::TaskStats& a, const TaskObserver::TaskStats& b) {
+        double avgA = a.executionCount > 0 ? 
+            static_cast&lt;double&gt;(a.totalExecutionTimeMs) / a.executionCount : 0;
+        double avgB = b.executionCount > 0 ? 
+            static_cast&lt;double&gt;(b.totalExecutionTimeMs) / b.executionCount : 0;
+        return avgA > avgB;
+    });
+
+// Output the slowest components
+std::cout << "Top 5 Slowest Components:" << std::endl;
+for (size_t i = 0; i < std::min(size_t(5), allStats.size()); ++i) {
+    const auto& stats = allStats[i];
+    double avgTime = stats.executionCount > 0 ? 
+        static_cast&lt;double&gt;(stats.totalExecutionTimeMs) / stats.executionCount : 0;
+    
+    std::cout << i+1 << ". " << stats.taskName << " (" << stats.taskType << ")\n"
+              << "   Average time: " << avgTime << " ms\n"
+              << "   Executions: " << stats.executionCount << "\n"
+              << "   Success rate: " 
+              << (stats.executionCount > 0 ? 
+                 (static_cast&lt;double&gt;(stats.successCount) / stats.executionCount * 100) : 0) 
+              << "%" << std::endl;
+}</code></pre>
+
+        <h2 id="how-it-works">How It Works</h2>
+        <p>TaskObserver connects to task signals to monitor their lifecycle:</p>
+
+        <h3>1. Task Observation</h3>
+        <p>When <code>attach()</code> is called, the observer connects to the task's signals:</p>
+        <ul class="feature-list">
+            <li><code>started</code> - To detect when execution begins</li>
+            <li><code>finished</code> - To detect successful completion</li>
+            <li><code>error</code> - To detect failures</li>
+            <li><code>progress</code> - To track progress updates</li>
+        </ul>
+
+        <h3>2. Statistics Tracking</h3>
+        <p>For each task event, the observer:</p>
+        <ul class="feature-list">
+            <li>Updates internal statistics</li>
+            <li>Calculates derived metrics (e.g., average time, success rate)</li>
+            <li>Emits its own signals for monitoring</li>
+        </ul>
+
+        <h3>3. Metrics Retrieval</h3>
+        <p>Applications can retrieve statistics at any time using the <code>getTaskStats()</code> or
+            <code>getAllTaskStats()</code> methods.</p>
+
+        <div class="example-header">Attach Implementation</div>
+        <pre class="example-content"><code>bool TaskObserver::attach(Task* task, const std::string& taskName) {
+    if (!task) {
+        emitString("error", "Cannot attach to null task");
+        return false;
+    }
+    
+    // If task is already being monitored, detach first
+    if (m_taskStats.find(task) != m_taskStats.end()) {
+        detach(task);
+    }
+    
+    // Create a new statistics entry
+    TaskStats stats;
+    
+    // Use provided name or get type name
+    stats.taskName = taskName.empty() ? 
+        typeid(*task).name() : taskName;
+    stats.taskType = typeid(*task).name();
+    
+    // Initialize counters
+    stats.executionCount = 0;
+    stats.successCount = 0;
+    stats.failureCount = 0;
+    stats.totalExecutionTimeMs = 0;
+    stats.minExecutionTimeMs = std::numeric_limits&lt;int64_t&gt;::max();
+    stats.maxExecutionTimeMs = 0;
+    stats.lastProgress = 0.0;
+    
+    // Store the statistics object
+    m_taskStats[task] = stats;
+    
+    // Connect to task signals
+    m_connections[task].push_back(
+        task->connectSimple("started", 
+            [this, task]() { this->onTaskStarted(task); }));
+            
+    m_connections[task].push_back(
+        task->connectSimple("finished", 
+            [this, task]() { this->onTaskFinished(task); }));
+            
+    m_connections[task].push_back(
+        task->connectData("error", 
+            [this, task](const ArgumentPack& args) { 
+                this->onTaskError(task, args); 
+            }));
+            
+    m_connections[task].push_back(
+        task->connectData("progress", 
+            [this, task](const ArgumentPack& args) { 
+                this->onTaskProgress(task, args); 
+            }));
+    
+    emitString("log", "Started monitoring task: " + stats.taskName);
+    return true;
+}</code></pre>
+
+        <h2 id="monitoring">Monitoring Capabilities</h2>
+        <p>TaskObserver provides various monitoring capabilities:</p>
+
+        <h3>1. Execution Counting</h3>
+        <p>Tracks how many times each task has been executed, succeeded, or failed:</p>
+        <div class="example-header">Tracking Execution Counts</div>
+        <pre class="example-content"><code>void TaskObserver::onTaskFinished(Task* task) {
+    auto it = m_taskStats.find(task);
+    if (it == m_taskStats.end()) return;
+    
+    auto& stats = it->second;
+    
+    // Record execution end time
+    auto now = std::chrono::system_clock::now();
+    
+    // Calculate execution duration
+    auto execTime = std::chrono::duration_cast&lt;std::chrono::milliseconds&gt;(
+        now - m_executionStartTimes[task]).count();
+    
+    // Update statistics
+    stats.executionCount++;
+    stats.successCount++;
+    stats.totalExecutionTimeMs += execTime;
+    stats.minExecutionTimeMs = std::min(stats.minExecutionTimeMs, execTime);
+    stats.maxExecutionTimeMs = std::max(stats.maxExecutionTimeMs, execTime);
+    stats.lastExecutionTime = now;
+    
+    // Emit statistics update
+    ArgumentPack args;
+    args.add&lt;std::string&gt;(stats.taskName);
+    args.add&lt;std::string&gt;(stats.taskType);
+    args.add&lt;int&gt;(stats.executionCount);
+    args.add&lt;int&gt;(stats.successCount);
+    args.add&lt;int&gt;(stats.failureCount);
+    args.add&lt;double&gt;(getAverageExecutionTime(task));
+    emit("statsUpdated", args);
+    
+    // Emit task finished signal
+    ArgumentPack finishArgs;
+    finishArgs.add&lt;std::string&gt;(stats.taskName);
+    finishArgs.add&lt;std::string&gt;(stats.taskType);
+    finishArgs.add&lt;int64_t&gt;(execTime);
+    finishArgs.add&lt;bool&gt;(true); // success
+    emit("taskFinished", finishArgs);
+    
+    // Clean up
+    m_executionStartTimes.erase(task);
+}</code></pre>
+
+        <h3>2. Timing Statistics</h3>
+        <p>Collects detailed timing information across executions:</p>
+        <ul class="feature-list">
+            <li>Total execution time</li>
+            <li>Minimum execution time</li>
+            <li>Maximum execution time</li>
+            <li>Average execution time</li>
+        </ul>
+
+        <h3>3. Success Rate Analysis</h3>
+        <p>Calculates task reliability based on success and failure rates:</p>
+        <div class="example-header">Success Rate Calculation</div>
+        <pre class="example-content"><code>double TaskObserver::getSuccessRate(Task* task) const {
+    auto it = m_taskStats.find(task);
+    if (it == m_taskStats.end() || it->second.executionCount == 0) {
+        return 0.0; // No executions yet
+    }
+    
+    const auto& stats = it->second;
+    return static_cast&lt;double&gt;(stats.successCount) / stats.executionCount * 100.0;
+}</code></pre>
+
+        <h3>4. Progress Tracking</h3>
+        <p>Monitors task progress reporting to identify stalled or slow-progressing tasks:</p>
+        <div class="example-header">Progress Monitoring</div>
+        <pre class="example-content"><code>void TaskObserver::onTaskProgress(Task* task, const ArgumentPack& args) {
+    auto it = m_taskStats.find(task);
+    if (it == m_taskStats.end() || args.empty()) return;
+    
+    // Extract progress value (typically 0.0 to 1.0)
+    double progress = args.get&lt;float&gt;(0);
+    
+    // Update statistics
+    it->second.lastProgress = progress;
+    
+    // Could implement progress rate calculations or stall detection here
+}</code></pre>
+
+        <h2 id="custom-metrics">Custom Metrics</h2>
+        <p>TaskObserver supports application-specific metrics beyond the standard statistics:</p>
+
+        <div class="example-header">Custom Metric Usage</div>
+        <pre class="example-content"><code>// Adding custom metrics
+void trackResourceUsage(std::shared_ptr&lt;TaskObserver&gt; observer, 
+                        std::shared_ptr&lt;DataProcessor&gt; processor) {
+    // Monitor memory usage
+    size_t memoryUsed = processor->getMemoryUsage();
+    observer->addCustomMetric(processor.get(), "MemoryUsageMB", 
+                             static_cast&lt;double&gt;(memoryUsed) / (1024 * 1024));
+    
+    // Monitor CPU utilization
+    double cpuUsage = processor->getCpuUtilization();
+    observer->addCustomMetric(processor.get(), "CpuUsagePercent", cpuUsage * 100.0);
+    
+    // Monitor I/O operations
+    int ioOps = processor->getIoOperationCount();
+    observer->addCustomMetric(processor.get(), "IoOperations", ioOps);
+    
+    // Retrieve and use custom metrics
+    auto stats = observer->getTaskStats(processor.get());
+    if (stats) {
+        for (const auto& [metricName, value] : stats->customMetrics) {
+            std::cout << "Metric: " << metricName << " = " << value << std::endl;
+        }
+    }
+}</code></pre>
+
+        <p>Custom metrics can be used for:</p>
+        <ul class="feature-list">
+            <li>Resource usage tracking (memory, CPU, disk)</li>
+            <li>Business metrics (items processed, error rates)</li>
+            <li>Application-specific performance indicators</li>
+            <li>Quality metrics (accuracy, precision)</li>
+        </ul>
+
+        <h2 id="analysis">Statistical Analysis</h2>
+        <p>TaskObserver provides built-in and extensible analysis capabilities:</p>
+
+        <h3>1. Summary Reports</h3>
+        <p>Generate comprehensive reports about task execution:</p>
+        <div class="example-header">Summary Report Generation</div>
+        <pre class="example-content"><code>std::string TaskObserver::generateSummaryReport() const {
+    std::stringstream report;
+    
+    report << "======================================\n";
+    report << "         TASK EXECUTION REPORT        \n";
+    report << "======================================\n\n";
+    
+    report << "Total tasks monitored: " << m_taskStats.size() << "\n\n";
+    
+    // Loop through all tasks
+    for (const auto& [task, stats] : m_taskStats) {
+        report << "Task: " << stats.taskName << " (" << stats.taskType << ")\n";
+        report << "--------------------------------------\n";
+        report << "  Executions: " << stats.executionCount << "\n";
+        report << "  Successes: " << stats.successCount << "\n";
+        report << "  Failures: " << stats.failureCount << "\n";
+        
+        if (stats.executionCount > 0) {
+            report << "  Success Rate: " 
+                   << (static_cast&lt;double&gt;(stats.successCount) / stats.executionCount * 100.0)
+                   << "%\n";
+                   
+            double avgTime = static_cast&lt;double&gt;(stats.totalExecutionTimeMs) / 
+                             stats.executionCount;
+            report << "  Average Time: " << avgTime << " ms\n";
+            report << "  Minimum Time: " << stats.minExecutionTimeMs << " ms\n";
+            report << "  Maximum Time: " << stats.maxExecutionTimeMs << " ms\n";
+        }
+        
+        if (!stats.customMetrics.empty()) {
+            report << "  Custom Metrics:\n";
+            for (const auto& [metricName, value] : stats.customMetrics) {
+                report << "    - " << metricName << ": " << value << "\n";
+            }
+        }
+        
+        report << "\n";
+    }
+    
+    report << "======================================\n";
+    return report.str();
+}</code></pre>
+
+        <h3>2. Performance Analysis</h3>
+        <p>Identify performance issues and bottlenecks:</p>
+        <div class="example-header">Finding Performance Bottlenecks</div>
+        <pre class="example-content"><code>// Find the slowest tasks in the system
+std::vector&lt;Task*&gt; findBottlenecks(std::shared_ptr&lt;TaskObserver&gt; observer, 
+                                  double timeThresholdMs = 100.0) {
+    std::vector&lt;Task*&gt; slowTasks;
+    std::vector&lt;TaskObserver::TaskStats&gt; allStats = observer->getAllTaskStats();
+    
+    // Find tasks with average execution time above threshold
+    for (const auto& stats : allStats) {
+        Task* task = findTaskByName(stats.taskName); // Hypothetical lookup function
+        if (!task) continue;
+        
+        double avgTime = observer->getAverageExecutionTime(task);
+        if (avgTime > timeThresholdMs) {
+            slowTasks.push_back(task);
+        }
+    }
+    
+    // Sort by average execution time (descending)
+    std::sort(slowTasks.begin(), slowTasks.end(), 
+        [observer](Task* a, Task* b) {
+            return observer->getAverageExecutionTime(a) > 
+                   observer->getAverageExecutionTime(b);
+        });
+    
+    return slowTasks;
+}</code></pre>
+
+        <h3>3. Reliability Analysis</h3>
+        <p>Identify tasks with high failure rates:</p>
+        <div class="example-header">Finding Unreliable Tasks</div>
+        <pre class="example-content"><code>// Find tasks with low success rates
+std::vector&lt;Task*&gt; findUnreliableTasks(std::shared_ptr&lt;TaskObserver&gt; observer, 
+                                       double minSuccessRate = 95.0) {
+    std::vector&lt;Task*&gt; unreliableTasks;
+    
+    // Check all tasks
+    auto allStats = observer->getAllTaskStats();
+    for (const auto& stats : allStats) {
+        Task* task = findTaskByName(stats.taskName); // Hypothetical lookup function
+        if (!task) continue;
+        
+        // Skip tasks with too few executions for meaningful analysis
+        if (stats.executionCount < 5) continue;
+        
+        double successRate = observer->getSuccessRate(task);
+        if (successRate < minSuccessRate) {
+            unreliableTasks.push_back(task);
+        }
+    }
+    
+    return unreliableTasks;
+}</code></pre>
+
+        <h2 id="benefits">Benefits</h2>
+        <p>TaskObserver provides several benefits for applications:</p>
+
+        <h3>Performance Optimization</h3>
+        <ul class="feature-list">
+            <li>Identify slow tasks or bottlenecks</li>
+            <li>Track execution time trends</li>
+            <li>Focus optimization efforts on the most impactful areas</li>
+        </ul>
+
+        <h3>Reliability Monitoring</h3>
+        <ul class="feature-list">
+            <li>Track failure rates across system components</li>
+            <li>Identify intermittent failures</li>
+            <li>Detect error patterns</li>
+        </ul>
+
+        <h3>Resource Management</h3>
+        <ul class="feature-list">
+            <li>Understand execution patterns</li>
+            <li>Monitor resource usage through custom metrics</li>
+            <li>Plan capacity based on actual usage data</li>
+        </ul>
+
+        <h3>System Tuning</h3>
+        <ul class="feature-list">
+            <li>Gather data to optimize thread pool size</li>
+            <li>Adjust task priorities based on performance characteristics</li>
+            <li>Fine-tune system parameters for optimal performance</li>
+        </ul>
+
+        <h3>Diagnostics</h3>
+        <ul class="feature-list">
+            <li>Easily identify problematic tasks during development and testing</li>
+            <li>Collect diagnostic information for troubleshooting</li>
+            <li>Compare performance across different system configurations</li>
+        </ul>
+
+        <h2 id="thread-safety">Thread Safety</h2>
+        <p>TaskObserver is designed to be thread-safe for monitoring tasks across different threads:</p>
+        <ul class="feature-list">
+            <li>Statistics updates are protected by mutex locks</li>
+            <li>Signal connections use thread-safe shared ownership</li>
+            <li>Custom metric management includes synchronization</li>
+            <li>Report generation creates a safe snapshot of current statistics</li>
+        </ul>
+
+        <div class="note">
+            <strong>Note:</strong> Task observation is thread-safe, but observer methods should not be called from
+            within task signal handlers to avoid potential deadlocks. Use signals emitted by the observer instead.
+        </div>
+
+        <h2 id="best-practices">Best Practices</h2>
+        <ul class="feature-list">
+            <li><strong>Selective Monitoring:</strong> Attach the observer only to tasks that need monitoring to
+                minimize overhead</li>
+            <li><strong>Descriptive Names:</strong> Provide meaningful task names for better identification in reports
+            </li>
+            <li><strong>Targeted Metrics:</strong> Add custom metrics that are relevant to your specific application
+                needs</li>
+            <li><strong>Regular Analysis:</strong> Periodically check summary reports to identify trends</li>
+            <li><strong>Signal Handlers:</strong> Keep observer signal handlers lightweight to avoid impacting task
+                performance</li>
+            <li><strong>Data Persistence:</strong> Consider storing statistics to a database for long-term analysis</li>
+            <li><strong>Reset When Needed:</strong> Use resetAllStats() when starting a new diagnostic session</li>
+            <li><strong>Detach Unused Tasks:</strong> Call detach() when a task is no longer needed to free resources
+            </li>
+        </ul>
+
+        <h2 id="implementation">Implementation Details</h2>
+        <ul class="feature-list">
+            <li>Uses the existing signal-slot system for communication</li>
+            <li>Maintains a map of task statistics by task pointer</li>
+            <li>Tracks execution timing using <code>std::chrono</code></li>
+            <li>Stores weak references to connections to prevent memory leaks</li>
+            <li>Thread-safe implementation with mutex protection for statistics access</li>
+            <li>Generates reports based on current statistics snapshot</li>
+            <li>Custom metrics are stored in a flexible map structure</li>
+            <li>Analysis methods calculate metrics on demand to ensure up-to-date results</li>
+        </ul>
+
+        <div class="example-header">Advanced Usage: Performance Dashboard</div>
+        <pre class="example-content"><code>// Create a performance dashboard for system monitoring
+class PerformanceDashboard {
+public:
+    PerformanceDashboard() {
+        m_observer = std::make_shared&lt;TaskObserver&gt;("SystemMonitor");
+        
+        // Connect to observer signals
+        m_observer->connectData("statsUpdated", 
+            [this](const ArgumentPack& args) { this->onStatsUpdated(args); });
+            
+        m_observer->connectData("taskFailed", 
+            [this](const ArgumentPack& args) { this->onTaskFailed(args); });
+    }
+    
+    // Monitor a component
+    void addComponent(std::shared_ptr&lt;Task&gt; component, const std::string& name) {
+        m_observer->attach(component.get(), name);
+        m_components[name] = component;
+    }
+    
+    // Generate a dashboard report
+    std::string generateDashboard() {
+        std::stringstream dash;
+        
+        dash << "===== SYSTEM PERFORMANCE DASHBOARD =====\n\n";
+        
+        // Get all statistics
+        auto allStats = m_observer->getAllTaskStats();
+        
+        // Overall system metrics
+        int totalExecs = 0;
+        int totalSuccesses = 0;
+        int totalFailures = 0;
+        int64_t totalTime = 0;
+        
+        for (const auto& stats : allStats) {
+            totalExecs += stats.executionCount;
+            totalSuccesses += stats.successCount;
+            totalFailures += stats.failureCount;
+            totalTime += stats.totalExecutionTimeMs;
+        }
+        
+        dash << "System Overview:\n";
+        dash << "  Components: " << allStats.size() << "\n";
+        dash << "  Total Executions: " << totalExecs << "\n";
+        dash << "  Success Rate: " << (totalExecs > 0 ? 
+            (static_cast&lt;double&gt;(totalSuccesses) / totalExecs * 100) : 0) << "%\n";
+        dash << "  Total Execution Time: " << totalTime << "ms\n\n";
+        
+        // Performance issues section
+        dash << "Performance Hotspots:\n";
+        
+        // Sort by average execution time
+        std::vector&lt;TaskObserver::TaskStats&gt; sortedStats = allStats;
+        std::sort(sortedStats.begin(), sortedStats.end(), 
+            [](const auto& a, const auto& b) {
+                double avgA = a.executionCount > 0 ? 
+                    static_cast&lt;double&gt;(a.totalExecutionTimeMs) / a.executionCount : 0;
+                double avgB = b.executionCount > 0 ? 
+                    static_cast&lt;double&gt;(b.totalExecutionTimeMs) / b.executionCount : 0;
+                return avgA > avgB;
+            });
+        
+        // List top 3 slowest components
+        for (size_t i = 0; i < std::min(size_t(3), sortedStats.size()); ++i) {
+            const auto& stats = sortedStats[i];
+            double avgTime = stats.executionCount > 0 ? 
+                static_cast&lt;double&gt;(stats.totalExecutionTimeMs) / stats.executionCount : 0;
+                
+            dash << "  " << (i+1) << ". " << stats.taskName << "\n";
+            dash << "     Avg Time: " << avgTime << "ms\n";
+            dash << "     Max Time: " << stats.maxExecutionTimeMs << "ms\n";
+        }
+        
+        dash << "\nReliability Issues:\n";
+        
+        // Sort by failure rate
+        std::sort(sortedStats.begin(), sortedStats.end(), 
+            [](const auto& a, const auto& b) {
+                double failRateA = a.executionCount > 0 ? 
+                    static_cast&lt;double&gt;(a.failureCount) / a.executionCount : 0;
+                double failRateB = b.executionCount > 0 ? 
+                    static_cast&lt;double&gt;(b.failureCount) / b.executionCount : 0;
+                return failRateA > failRateB;
+            });
+        
+        // List top 3 unreliable components
+        for (size_t i = 0; i < std::min(size_t(3), sortedStats.size()); ++i) {
+            const auto& stats = sortedStats[i];
+            
+            // Skip if no failures
+            if (stats.failureCount == 0) continue;
+            
+            double failRate = stats.executionCount > 0 ? 
+                static_cast&lt;double&gt;(stats.failureCount) / stats.executionCount * 100 : 0;
+                
+            dash << "  " << (i+1) << ". " << stats.taskName << "\n";
+            dash << "     Failure Rate: " << failRate << "%\n";
+            dash << "     Total Failures: " << stats.failureCount << "\n";
+        }
+        
+        return dash.str();
+    }
+    
+private:
+    void onStatsUpdated(const ArgumentPack& args) {
+        std::string taskName = args.get&lt;std::string&gt;(0);
+        int execCount = args.get&lt;int&gt;(2);
+        double avgTime = args.get&lt;double&gt;(5);
+        
+        // Update dashboard UI (in a real implementation)
+        // updateComponentStats(taskName, execCount, avgTime);
+    }
+    
+    void onTaskFailed(const ArgumentPack& args) {
+        std::string taskName = args.get&lt;std::string&gt;(0);
+        std::string errorMsg = args.get&lt;std::string&gt;(2);
+        
+        // Alert on component failure (in a real implementation)
+        // showFailureAlert(taskName, errorMsg);
+        
+        // Log the failure
+        std::cout << "ALERT: Component " << taskName << " failed: " 
+                  << errorMsg << std::endl;
+    }
+    
+    std::shared_ptr&lt;TaskObserver&gt; m_observer;
+    std::map&lt;std::string, std::shared_ptr&lt;Task&gt;&gt; m_components;
+};
+
+// Usage example
+void monitorSystemPerformance() {
+    // Create dashboard
+    auto dashboard = std::make_shared&lt;PerformanceDashboard&gt;();
+    
+    // Add system components
+    dashboard->addComponent(std::make_shared&lt;NetworkService&gt;(), "Network");
+    dashboard->addComponent(std::make_shared&lt;DatabaseService&gt;(), "Database");
+    dashboard->addComponent(std::make_shared&lt;FileSystem&gt;(), "FileSystem");
+    dashboard->addComponent(std::make_shared&lt;UserInterface&gt;(), "Interface");
+    
+    // Run normal system operations for a while
+    runSystem(std::chrono::minutes(10));
+    
+    // Generate and display dashboard
+    std::string report = dashboard->generateDashboard();
+    std::cout << report << std::endl;
+}</code></pre>
+
+        <h3>Visualization Integration</h3>
+        <p>The statistics collected by TaskObserver can be visualized for better analysis:</p>
+        <ul class="feature-list">
+            <li>Performance charts showing execution times</li>
+            <li>Success rate graphs</li>
+            <li>System load visualizations</li>
+            <li>Custom metric dashboards</li>
+        </ul>
+
+        <div class="note">
+            <strong>Integration Note:</strong> TaskObserver is designed to work with visualization libraries and
+            reporting tools. Its data structures can be easily mapped to JSON, CSV, or other formats for external
+            processing and visualization.
+        </div>
+
+        <h3>Monitoring Overhead</h3>
+        <p>TaskObserver is designed for minimal performance impact:</p>
+        <ul class="feature-list">
+            <li>Lightweight signal connections</li>
+            <li>Statistics updates only when events occur</li>
+            <li>No polling or continuous monitoring</li>
+            <li>Efficient memory usage with shared references</li>
+        </ul>
+
+        <p>For most applications, the overhead is negligible compared to the benefits of performance insights and
+            diagnostic capabilities.</p>
+</body>
+
+</html>

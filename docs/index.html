@@ -192,7 +192,11 @@
         </div>
 
         <div class="note">
-            <strong>Thread Safety:</strong> The Task Framework is designed with concurrency in mind, featuring comprehensive thread safety mechanisms throughout its components. Each component includes robust synchronization to enable safe concurrent operation without requiring external locks in most cases. This architecture allows you to build high-performance concurrent applications while minimizing the risk of race conditions and deadlocks.
+            <strong>Thread Safety:</strong> The Task Framework is designed with concurrency in mind, featuring
+            comprehensive thread safety mechanisms throughout its components. Each component includes robust
+            synchronization to enable safe concurrent operation without requiring external locks in most cases. This
+            architecture allows you to build high-performance concurrent applications while minimizing the risk of race
+            conditions and deadlocks.
         </div>
 
         <h2>Key Features</h2>
@@ -200,7 +204,8 @@
             <li><strong>Signal-Slot Communication:</strong> Enable loosely coupled communication between components</li>
             <li><strong>Task-Based Architecture:</strong> Structure applications around well-defined tasks</li>
             <li><strong>Parallel Execution:</strong> Easily distribute work across multiple threads</li>
-            <li><strong>Thread Safety:</strong> Comprehensive synchronization with atomics, mutexes, and lock-free techniques</li>
+            <li><strong>Thread Safety:</strong> Comprehensive synchronization with atomics, mutexes, and lock-free
+                techniques</li>
             <li><strong>Execution Control:</strong> Start, stop, and monitor task execution</li>
             <li><strong>Progress Reporting:</strong> Track and report progress of long-running operations</li>
             <li><strong>Flexible Job Handling:</strong> Process sequences of jobs in sequential or parallel modes</li>
@@ -214,7 +219,8 @@
     <div class="container">
         <div class="module-card">
             <h3>SignalSlot</h3>
-            <p>Implements a flexible, thread-safe event notification system that enables loosely coupled communication between components.</p>
+            <p>Implements a flexible, thread-safe event notification system that enables loosely coupled communication
+                between components.</p>
             <div>
                 <span class="tag">Base Class</span>
                 <span class="tag">Communication</span>
@@ -225,7 +231,8 @@
 
         <div class="module-card">
             <h3>Task</h3>
-            <p>The foundation for all task components in the framework, with standard signals for task lifecycle events.</p>
+            <p>The foundation for all task components in the framework, with standard signals for task lifecycle events.
+            </p>
             <div>
                 <span class="tag">Base Class</span>
                 <span class="tag">Core</span>
@@ -235,7 +242,8 @@
 
         <div class="module-card">
             <h3>Algorithm</h3>
-            <p>Provides a framework for implementing executable algorithms with standardized signaling and progress reporting.</p>
+            <p>Provides a framework for implementing executable algorithms with standardized signaling and progress
+                reporting.</p>
             <div>
                 <span class="tag">Core</span>
                 <span class="tag">Execution</span>
@@ -281,7 +289,8 @@
 
         <div class="module-card">
             <h3>ThreadPool</h3>
-            <p>Thread-safe manager that handles a collection of Runnable tasks and executes them in parallel across available CPU cores.</p>
+            <p>Thread-safe manager that handles a collection of Runnable tasks and executes them in parallel across
+                available CPU cores.</p>
             <div>
                 <span class="tag">Parallel</span>
                 <span class="tag">Performance</span>
@@ -292,7 +301,8 @@
 
         <div class="module-card">
             <h3>TaskQueue</h3>
-            <p>Thread-safe, priority-based task scheduling system that executes tasks based on their importance level.</p>
+            <p>Thread-safe, priority-based task scheduling system that executes tasks based on their importance level.
+            </p>
             <div>
                 <span class="tag">Scheduling</span>
                 <span class="tag">Prioritization</span>
@@ -348,8 +358,20 @@
         </div>
 
         <div class="module-card">
+            <h3>Switch</h3>
+            <p>A control flow component in the task framework that provides multi-way
+                conditional task execution.</p>
+            <div>
+                <span class="tag">Control Flow</span>
+                <span class="tag">Utility</span>
+            </div>
+            <a href="switch.html" class="button">View Documentation</a>
+        </div>
+
+        <div class="module-card">
             <h3>Logger</h3>
-            <p>Thread-safe centralized logging component that captures and formats log messages from task components.</p>
+            <p>Thread-safe centralized logging component that captures and formats log messages from task components.
+            </p>
             <div>
                 <span class="tag">Utility</span>
                 <span class="tag">Logging</span>
@@ -360,7 +382,8 @@
 
         <div class="module-card">
             <h3>ProgressMonitor</h3>
-            <p>Specialized task that tracks and responds to progress events across multiple tasks with thread-safe monitoring.</p>
+            <p>Specialized task that tracks and responds to progress events across multiple tasks with thread-safe
+                monitoring.</p>
             <div>
                 <span class="tag">Monitoring</span>
                 <span class="tag">Progress</span>
@@ -371,7 +394,8 @@
 
         <div class="module-card">
             <h3>TaskObserver</h3>
-            <p>Thread-safe monitoring tool that collects and analyzes statistics about task execution across the system.</p>
+            <p>Thread-safe monitoring tool that collects and analyzes statistics about task execution across the system.
+            </p>
             <div>
                 <span class="tag">Monitoring</span>
                 <span class="tag">Statistics</span>
@@ -399,7 +423,7 @@
                 <li>Thread-safe signal emission</li>
             </ul>
         </div>
-        
+
         <div class="module-card">
             <h3>Asynchronous Execution</h3>
             <p>Execute tasks asynchronously with control over their lifecycle.</p>
@@ -413,7 +437,7 @@
                 <li>Structured concurrency patterns</li>
             </ul>
         </div>
-        
+
         <div class="module-card">
             <h3>Cancellation Support</h3>
             <p>Robust cancellation mechanisms for stopping long-running operations.</p>

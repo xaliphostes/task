@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Switch - Task Framework Documentation</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css">
+</head>
+
+<body>
+    <a href="index.html" class="back-link">Back to Index</a>
+
+    <section class="section">
+        <h1>Switch</h1>
+        <p class="inheritance">Inherits from: <a href="task.html">Task</a></p>
+
+        <div class="toc">
+            <h4>Contents</h4>
+            <ul>
+                <li><a href="#overview">Overview</a></li>
+                <li><a href="#features">Features</a></li>
+                <li><a href="#interface">Class Interface</a></li>
+                <li><a href="#signals">Signals</a></li>
+                <li><a href="#usage">Usage Example</a></li>
+                <li><a href="#flow">Control Flow</a></li>
+                <li><a href="#async">Asynchronous Execution</a></li>
+                <li><a href="#lifecycle">Lifecycle</a></li>
+                <li><a href="#best-practices">Best Practices</a></li>
+            </ul>
+        </div>
+
+        <div id="overview" class="card">
+            <p>The <code>Switch</code> class is a control flow component in the task framework that provides multi-way
+                conditional task execution. It evaluates a selector function and executes the corresponding case task,
+                or a default task if no matching case is found. The class supports both string and integer selectors,
+                making it flexible for various decision-making scenarios.</p>
+        </div>
+
+        <h2 id="features">Features</h2>
+        <ul class="feature-list">
+            <li><strong>Multiple Execution Paths:</strong> Support for multiple case branches based on selector values
+            </li>
+            <li><strong>Type Flexibility:</strong> Works with both string and integer selector values</li>
+            <li><strong>Default Handling:</strong> Optional default task for when no cases match</li>
+            <li><strong>Selector Functions:</strong> Customizable functions for determining which case to execute</li>
+            <li><strong>Signal-Based Feedback:</strong> Emits signals for case selection and execution events</li>
+            <li><strong>Asynchronous Execution:</strong> Support for non-blocking execution in background threads</li>
+            <li><strong>Fluent Interface:</strong> Method chaining for readable case definition</li>
+        </ul>
+
+        <h2 id="interface">Class Interface</h2>
+        <pre><code class="language-cpp">class Switch : public Task {
+public:
+    // Type definitions for selector functions
+    using StringSelectorFunction = std::function&lt;std::string(const ArgumentPack&)>;
+    using IntSelectorFunction = std::function&lt;int(const ArgumentPack&)>;
+    using SelectorFunction = std::variant&lt;StringSelectorFunction, IntSelectorFunction>;
+    
+    // Constructors
+    explicit Switch(StringSelectorFunction selector);
+    explicit Switch(IntSelectorFunction selector);
+    
+    // Case definition methods
+    Switch& case_(const std::string& caseValue, Task* task);
+    Switch& case_(int caseValue, Task* task);
+    Switch& default_(Task* task);
+    
+    // Execution methods
+    void execute(const ArgumentPack& args = {});
+    std::future&lt;void> executeAsync(const ArgumentPack& args = {});
+    
+private:
+    SelectorFunction m_selector;
+    std::map&lt;std::string, Task*> m_stringCases;
+    std::map&lt;int, Task*> m_intCases;
+    Task* m_defaultTask = nullptr;
+    bool m_isStringSelector;
+    
+    Task* findTaskToExecute(const ArgumentPack& args);
+};</code></pre>
+
+        <h2 id="signals">Signals</h2>
+        <p>Switch emits the following signals:</p>
+
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Signal</th>
+                        <th>Type</th>
+                        <th>Description</th>
+                        <th>Arguments</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>started</td>
+                        <td>Simple</td>
+                        <td>Emitted when the Switch begins execution</td>
+                        <td>None</td>
+                    </tr>
+                    <tr>
+                        <td>finished</td>
+                        <td>Simple</td>
+                        <td>Emitted when the Switch completes execution</td>
+                        <td>None</td>
+                    </tr>
+                    <tr>
+                        <td>caseSelected</td>
+                        <td>Data</td>
+                        <td>Emitted when a matching case is found</td>
+                        <td>String or int (the case value)</td>
+                    </tr>
+                    <tr>
+                        <td>defaultSelected</td>
+                        <td>Simple</td>
+                        <td>Emitted when no case matches and default is used</td>
+                        <td>None</td>
+                    </tr>
+                    <tr>
+                        <td>noMatchFound</td>
+                        <td>Simple</td>
+                        <td>Emitted when no case matches and no default exists</td>
+                        <td>None</td>
+                    </tr>
+                    <tr>
+                        <td>error</td>
+                        <td>Data</td>
+                        <td>Reports errors during execution</td>
+                        <td>std::string (error message)</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <h2 id="usage">Usage Example</h2>
+        <div class="example-header">String-Based Switch Example</div>
+        <pre><code class="language-cpp">// Create a string-based Switch
+Switch commandSwitch([](const ArgumentPack& args) {
+    return args.get&lt;std::string>(0);  // First argument is the command
+});
+
+// Define tasks for each command
+StartProcess startTask;
+StopProcess stopTask;
+RestartProcess restartTask;
+ShowHelp helpTask;
+
+// Add cases to the switch
+commandSwitch.case_("start", &startTask)
+             .case_("stop", &stopTask)
+             .case_("restart", &restartTask)
+             .default_(&helpTask);
+
+// Connect to switch signals
+commandSwitch.connect("started", []() {
+    std::cout << "Command processing started" << std::endl;
+});
+
+commandSwitch.connect("caseSelected", [](const ArgumentPack& args) {
+    std::string command = args.get&lt;std::string>(0);
+    std::cout << "Executing command: " << command << std::endl;
+});
+
+// Execute with a command
+commandSwitch.execute(ArgumentPack("restart"));  // Will execute restartTask</code></pre>
+
+        <div class="example-header">Integer-Based Switch Example</div>
+        <pre class="example-content"><code class="language-cpp">// Create an integer-based Switch
+Switch stateSwitch([](const ArgumentPack& args) {
+    return args.get&lt;int>(0);  // First argument is the state
+});
+
+// Define tasks for each state
+InitializeSystem initTask;
+NormalOperation runningTask;
+ErrorHandling errorTask;
+SystemShutdown shutdownTask;
+
+// Add cases to the switch
+stateSwitch.case_(0, &initTask)        // INIT state
+           .case_(1, &runningTask)     // RUNNING state
+           .case_(2, &errorTask)       // ERROR state 
+           .case_(3, &shutdownTask)    // SHUTDOWN state
+           .default_(&errorTask);      // Default to error handling
+
+// Execute asynchronously
+auto future = stateSwitch.executeAsync(ArgumentPack(1)); // RUNNING state
+
+// Do other work while task executes...
+
+// Wait for completion if needed
+future.wait();</code></pre>
+
+        <h2 id="flow">Control Flow</h2>
+        <p>The Switch class implements multi-way conditional control flow using the following process:</p>
+
+        <ol>
+            <li><strong>Selector Evaluation:</strong> The selector function is called with the provided arguments</li>
+            <li><strong>Case Matching:</strong> The result is compared against the registered cases</li>
+            <li><strong>Task Selection:</strong> If a match is found, the corresponding task is selected</li>
+            <li><strong>Default Handling:</strong> If no match is found, the default task is selected (if provided)</li>
+            <li><strong>Task Execution:</strong> The selected task is executed</li>
+        </ol>
+
+        <div class="note">
+            <strong>Note:</strong> Unlike C/C++ switch statements, the Switch class does not support fallthrough
+            behavior. Only one case is executed per evaluation.
+        </div>
+
+        <h2 id="async">Asynchronous Execution</h2>
+        <p>The <code>executeAsync()</code> method provides asynchronous execution using C++ futures:</p>
+
+        <pre><code class="language-cpp">// Execute switch in a background thread
+std::future<void> future = switchTask.executeAsync(args);
+
+// Do other work while switch evaluates and executes
+
+// Wait for completion when needed
+future.wait();</code></pre>
+
+        <p>This allows the switch evaluation and subsequent task execution to run in the background without blocking the
+            main thread.</p>
+
+        <h2 id="lifecycle">Lifecycle</h2>
+        <p>A Switch task goes through the following lifecycle:</p>
+
+        <ol>
+            <li><strong>Construction:</strong> Created with a selector function (string or integer)</li>
+            <li><strong>Case Definition:</strong> Cases are added via the <code>case_()</code> and
+                <code>default_()</code> methods
+            </li>
+            <li><strong>Execution Start:</strong> <code>execute()</code> or <code>executeAsync()</code> called, emits
+                "started" signal</li>
+            <li><strong>Selector Evaluation:</strong> The selector function is called to determine which case to execute
+            </li>
+            <li><strong>Case Selection:</strong> A matching case is found, or the default is used, with appropriate
+                signals</li>
+            <li><strong>Task Execution:</strong> The selected task is executed</li>
+            <li><strong>Execution End:</strong> Switch completes, emits "finished" signal</li>
+            <li><strong>Error Handling:</strong> If exceptions occur, they are caught and reported via the "error"
+                signal</li>
+        </ol>
+
+        <div class="note">
+            <p>The implementation automatically handles the proper emission of signals throughout the lifecycle,
+                ensuring that components listening to the Switch can track its execution state.</p>
+        </div>
+
+        <h2 id="implementation">Implementation Details</h2>
+        <p>Here's a closer look at some key implementation details:</p>
+
+        <div class="example-header">Task Selection Implementation</div>
+        <pre class="example-content"><code class="language-cpp">Task* Switch::findTaskToExecute(const ArgumentPack& args) {
+    try {
+        if (m_isStringSelector) {
+            std::string selectedCase = std::get&lt;StringSelectorFunction>(m_selector)(args);
+            
+            auto it = m_stringCases.find(selectedCase);
+            if (it != m_stringCases.end()) {
+                emit("caseSelected", ArgumentPack(selectedCase));
+                return it->second;
+            }
+        } else {
+            int selectedCase = std::get&lt;IntSelectorFunction>(m_selector)(args);
+                       
+            auto it = m_intCases.find(selectedCase);
+            if (it != m_intCases.end()) {
+                emit("caseSelected", ArgumentPack(selectedCase));
+                return it->second;
+            }
+        }
+        
+        // No matching case found, use default
+        if (m_defaultTask) {
+            emit("defaultSelected");
+            return m_defaultTask;
+        }
+        
+        // No default task either
+        emit("noMatchFound");
+        emitString("warn", "No matching case or default task found");
+        return nullptr;
+    } catch (const std::exception& e) {
+        emitString("error", "Exception in selector function: " + std::string(e.what()));
+        return nullptr;
+    }
+}</code></pre>
+
+        <h2 id="best-practices">Best Practices</h2>
+        <ul class="feature-list">
+            <li><strong>Define a Default Case:</strong> Always provide a default case to handle unexpected values</li>
+            <li><strong>Task Ownership:</strong> Be careful about task ownership when using raw pointers</li>
+            <li><strong>Exception Safety:</strong> Ensure selector functions handle exceptions gracefully</li>
+            <li><strong>Case Ordering:</strong> The order of case definitions doesn't affect execution (unlike if-else
+                chains)</li>
+            <li><strong>Signal Connections:</strong> Connect to the Switch signals to monitor execution flow</li>
+            <li><strong>Selector Purity:</strong> Avoid side effects in selector functions for predictable behavior</li>
+            <li><strong>Task Independence:</strong> Design tasks to be independent and not rely on execution order</li>
+        </ul>
+
+        <h2 id="related">Related Components</h2>
+        <p>Switch works well with other components in the task framework:</p>
+
+        <ul class="feature-list">
+            <li><strong><a href="if.html">If</a>:</strong> For binary conditional execution</li>
+            <li><strong><a href="algorithm.html">Algorithm</a>:</strong> Use algorithms as case tasks</li>
+            <li><strong><a href="threadpool.html">ThreadPool</a>:</strong> Execute multiple switches in parallel</li>
+            <li><strong><a href="logger.html">Logger</a>:</strong> Monitor switch execution and case selection</li>
+        </ul>
+
+        <div class="note">
+            <strong>Note:</strong> When choosing between <code>If</code> and <code>Switch</code>, consider the number of
+            conditions. Use <code>If</code> for simple binary decisions and <code>Switch</code> for multi-way branching.
+        </div>
+
+        <h2 id="examples">Additional Examples</h2>
+
+        <div class="example-header">State Machine Implementation</div>
+        <pre><code>// Create a simple state machine using Switch
+class StateMachine {
+public:
+    enum State { INIT, IDLE, PROCESSING, ERROR, SHUTDOWN };
+    
+    StateMachine() {
+        m_stateSwitch = std::make_unique&lt;Switch>([this](const ArgumentPack&) {
+            return m_currentState;
+        });
+        
+        // Define state tasks
+        m_initTask = std::make_unique&lt;InitTask>();
+        m_idleTask = std::make_unique&lt;IdleTask>();
+        m_processingTask = std::make_unique&lt;ProcessingTask>();
+        m_errorTask = std::make_unique&lt;ErrorTask>();
+        m_shutdownTask = std::make_unique&lt;ShutdownTask>();
+        
+        // Register state handlers
+        m_stateSwitch->case_(INIT, m_initTask.get())
+                     ->case_(IDLE, m_idleTask.get())
+                     ->case_(PROCESSING, m_processingTask.get())
+                     ->case_(ERROR, m_errorTask.get())
+                     ->case_(SHUTDOWN, m_shutdownTask.get())
+                     ->default_(m_errorTask.get());
+                     
+        // Connect state change signal
+        m_initTask->connectSimple("finished", [this]() { 
+            setState(IDLE); 
+        });
+        
+        m_idleTask->connectData("newData", [this](const ArgumentPack&) {
+            setState(PROCESSING);
+        });
+        
+        m_processingTask->connectSimple("finished", [this]() {
+            setState(IDLE);
+        });
+        
+        m_processingTask->connectSimple("error", [this]() {
+            setState(ERROR);
+        });
+    }
+    
+    void setState(State newState) {
+        m_currentState = newState;
+        m_stateSwitch->execute();
+    }
+    
+    void start() {
+        setState(INIT);
+    }
+    
+private:
+    State m_currentState = INIT;
+    std::unique_ptr&lt;Switch> m_stateSwitch;
+    
+    // State tasks
+    std::unique_ptr&lt;Task> m_initTask;
+    std::unique_ptr&lt;Task> m_idleTask;
+    std::unique_ptr&lt;Task> m_processingTask;
+    std::unique_ptr&lt;Task> m_errorTask;
+    std::unique_ptr&lt;Task> m_shutdownTask;
+};</code></pre>
+    </section>
+
+    <!-- Add highlight.js script at the end of body -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/cpp.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', (event) => {
+            document.querySelectorAll('pre code').forEach((block) => {
+                hljs.highlightBlock(block);
+            });
+        });
+    </script>
+</body>
+
+</html>

@@ -58,8 +58,8 @@ public:
     explicit If(ConditionFunction condition);
     
     // Configuration methods (fluent interface)
-    If& then(std::shared_ptr<Task> task);
-    If& else_(std::shared_ptr<Task> task);
+    If& then(Task* task);
+    If& else_(Task* task);
     
     // Execution methods
     void execute(const ArgumentPack& args = {});
@@ -138,21 +138,21 @@ private:
         <h2 id="usage">Usage Example</h2>
         <div class="example-header">Creating and Using an If Task</div>
         <pre class="example-content"><code>// Creating a conditional task
-auto checkValue = std::make_shared<If>([](const ArgumentPack& args) {
+If checkValue([](const ArgumentPack& args) {
     // Condition that evaluates whether the first argument > 10
     if (args.empty()) return false;
     return args.get<int>(0) > 10;
 });
 
 // Configure the branches
-auto highValueTask = std::make_shared<MyTask>("Process high value");
-auto lowValueTask = std::make_shared<MyTask>("Process low value");
+MyTask highValueTask("Process high value");
+MyTask lowValueTask("Process low value");
 
-checkValue->then(highValueTask)
-          ->else_(lowValueTask);
+checkValue->then(&highValueTask)
+          ->else_(&lowValueTask);
 
 // Connect to signals
-checkValue->connectData("branchSelected", [](const ArgumentPack& args) {
+checkValue.connectData("branchSelected", [](const ArgumentPack& args) {
     bool result = args.get<bool>(0);
     std::string branch = args.get<std::string>(1);
     std::cout << "Selected branch: " << branch 

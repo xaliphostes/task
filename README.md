@@ -42,7 +42,7 @@ or
 make test
 ```
 
-## [Documentation in Markdown](docs/index.md)
+## [Documentation in Markdown](docs/md/index.md)
 
 ## [Documentation in html](https://xaliphostes.github.io/task/)
 

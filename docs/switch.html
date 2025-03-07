@@ -6,10 +6,15 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Switch - Task Framework Documentation</title>
     <link rel="stylesheet" href="styles.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css">
+
+    <!-- Include highlight.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/highlight.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/languages/javascript.min.js"></script>
+    <script src="code-highlighter.js"></script>
 </head>
 
 <body>
+
     <a href="index.html" class="back-link">Back to Index</a>
 
     <section class="section">
@@ -51,35 +56,7 @@
         </ul>
 
         <h2 id="interface">Class Interface</h2>
-        <pre><code class="language-cpp">class Switch : public Task {
-public:
-    // Type definitions for selector functions
-    using StringSelectorFunction = std::function&lt;std::string(const ArgumentPack&)>;
-    using IntSelectorFunction = std::function&lt;int(const ArgumentPack&)>;
-    using SelectorFunction = std::variant&lt;StringSelectorFunction, IntSelectorFunction>;
-    
-    // Constructors
-    explicit Switch(StringSelectorFunction selector);
-    explicit Switch(IntSelectorFunction selector);
-    
-    // Case definition methods
-    Switch& case_(const std::string& caseValue, Task* task);
-    Switch& case_(int caseValue, Task* task);
-    Switch& default_(Task* task);
-    
-    // Execution methods
-    void execute(const ArgumentPack& args = {});
-    std::future&lt;void> executeAsync(const ArgumentPack& args = {});
-    
-private:
-    SelectorFunction m_selector;
-    std::map&lt;std::string, Task*> m_stringCases;
-    std::map&lt;int, Task*> m_intCases;
-    Task* m_defaultTask = nullptr;
-    bool m_isStringSelector;
-    
-    Task* findTaskToExecute(const ArgumentPack& args);
-};</code></pre>
+        <code-from-file src="./code/switch-interface.h" language="cpp"></code-from-file>
 
         <h2 id="signals">Signals</h2>
         <p>Switch emits the following signals:</p>
@@ -137,62 +114,10 @@ private:
 
         <h2 id="usage">Usage Example</h2>
         <div class="example-header">String-Based Switch Example</div>
-        <pre><code class="language-cpp">// Create a string-based Switch
-Switch commandSwitch([](const ArgumentPack& args) {
-    return args.get&lt;std::string>(0);  // First argument is the command
-});
-
-// Define tasks for each command
-StartProcess startTask;
-StopProcess stopTask;
-RestartProcess restartTask;
-ShowHelp helpTask;
-
-// Add cases to the switch
-commandSwitch.case_("start", &startTask)
-             .case_("stop", &stopTask)
-             .case_("restart", &restartTask)
-             .default_(&helpTask);
-
-// Connect to switch signals
-commandSwitch.connect("started", []() {
-    std::cout << "Command processing started" << std::endl;
-});
-
-commandSwitch.connect("caseSelected", [](const ArgumentPack& args) {
-    std::string command = args.get&lt;std::string>(0);
-    std::cout << "Executing command: " << command << std::endl;
-});
-
-// Execute with a command
-commandSwitch.execute(ArgumentPack("restart"));  // Will execute restartTask</code></pre>
+        <code-from-file src="./code/switch-string-based.cxx" language="cpp"></code-from-file>
 
         <div class="example-header">Integer-Based Switch Example</div>
-        <pre class="example-content"><code class="language-cpp">// Create an integer-based Switch
-Switch stateSwitch([](const ArgumentPack& args) {
-    return args.get&lt;int>(0);  // First argument is the state
-});
-
-// Define tasks for each state
-InitializeSystem initTask;
-NormalOperation runningTask;
-ErrorHandling errorTask;
-SystemShutdown shutdownTask;
-
-// Add cases to the switch
-stateSwitch.case_(0, &initTask)        // INIT state
-           .case_(1, &runningTask)     // RUNNING state
-           .case_(2, &errorTask)       // ERROR state 
-           .case_(3, &shutdownTask)    // SHUTDOWN state
-           .default_(&errorTask);      // Default to error handling
-
-// Execute asynchronously
-auto future = stateSwitch.executeAsync(ArgumentPack(1)); // RUNNING state
-
-// Do other work while task executes...
-
-// Wait for completion if needed
-future.wait();</code></pre>
+        <code-from-file src="./code/switch-int-based.cxx" language="cpp"></code-from-file>
 
         <h2 id="flow">Control Flow</h2>
         <p>The Switch class implements multi-way conditional control flow using the following process:</p>
@@ -213,13 +138,7 @@ future.wait();</code></pre>
         <h2 id="async">Asynchronous Execution</h2>
         <p>The <code>executeAsync()</code> method provides asynchronous execution using C++ futures:</p>
 
-        <pre><code class="language-cpp">// Execute switch in a background thread
-std::future<void> future = switchTask.executeAsync(args);
-
-// Do other work while switch evaluates and executes
-
-// Wait for completion when needed
-future.wait();</code></pre>
+        <code-from-file src="./code/switch-async.cxx" language="cpp"></code-from-file>
 
         <p>This allows the switch evaluation and subsequent task execution to run in the background without blocking the
             main thread.</p>
@@ -253,41 +172,7 @@ future.wait();</code></pre>
         <p>Here's a closer look at some key implementation details:</p>
 
         <div class="example-header">Task Selection Implementation</div>
-        <pre class="example-content"><code class="language-cpp">Task* Switch::findTaskToExecute(const ArgumentPack& args) {
-    try {
-        if (m_isStringSelector) {
-            std::string selectedCase = std::get&lt;StringSelectorFunction>(m_selector)(args);
-            
-            auto it = m_stringCases.find(selectedCase);
-            if (it != m_stringCases.end()) {
-                emit("caseSelected", ArgumentPack(selectedCase));
-                return it->second;
-            }
-        } else {
-            int selectedCase = std::get&lt;IntSelectorFunction>(m_selector)(args);
-                       
-            auto it = m_intCases.find(selectedCase);
-            if (it != m_intCases.end()) {
-                emit("caseSelected", ArgumentPack(selectedCase));
-                return it->second;
-            }
-        }
-        
-        // No matching case found, use default
-        if (m_defaultTask) {
-            emit("defaultSelected");
-            return m_defaultTask;
-        }
-        
-        // No default task either
-        emit("noMatchFound");
-        emitString("warn", "No matching case or default task found");
-        return nullptr;
-    } catch (const std::exception& e) {
-        emitString("error", "Exception in selector function: " + std::string(e.what()));
-        return nullptr;
-    }
-}</code></pre>
+        <code-from-file src="./code/switch-detail.cxx" language="cpp"></code-from-file>
 
         <h2 id="best-practices">Best Practices</h2>
         <ul class="feature-list">
@@ -319,81 +204,9 @@ future.wait();</code></pre>
         <h2 id="examples">Additional Examples</h2>
 
         <div class="example-header">State Machine Implementation</div>
-        <pre><code>// Create a simple state machine using Switch
-class StateMachine {
-public:
-    enum State { INIT, IDLE, PROCESSING, ERROR, SHUTDOWN };
-    
-    StateMachine() {
-        m_stateSwitch = std::make_unique&lt;Switch>([this](const ArgumentPack&) {
-            return m_currentState;
-        });
-        
-        // Define state tasks
-        m_initTask = std::make_unique&lt;InitTask>();
-        m_idleTask = std::make_unique&lt;IdleTask>();
-        m_processingTask = std::make_unique&lt;ProcessingTask>();
-        m_errorTask = std::make_unique&lt;ErrorTask>();
-        m_shutdownTask = std::make_unique&lt;ShutdownTask>();
-        
-        // Register state handlers
-        m_stateSwitch->case_(INIT, m_initTask.get())
-                     ->case_(IDLE, m_idleTask.get())
-                     ->case_(PROCESSING, m_processingTask.get())
-                     ->case_(ERROR, m_errorTask.get())
-                     ->case_(SHUTDOWN, m_shutdownTask.get())
-                     ->default_(m_errorTask.get());
-                     
-        // Connect state change signal
-        m_initTask->connectSimple("finished", [this]() { 
-            setState(IDLE); 
-        });
-        
-        m_idleTask->connectData("newData", [this](const ArgumentPack&) {
-            setState(PROCESSING);
-        });
-        
-        m_processingTask->connectSimple("finished", [this]() {
-            setState(IDLE);
-        });
-        
-        m_processingTask->connectSimple("error", [this]() {
-            setState(ERROR);
-        });
-    }
-    
-    void setState(State newState) {
-        m_currentState = newState;
-        m_stateSwitch->execute();
-    }
-    
-    void start() {
-        setState(INIT);
-    }
-    
-private:
-    State m_currentState = INIT;
-    std::unique_ptr&lt;Switch> m_stateSwitch;
-    
-    // State tasks
-    std::unique_ptr&lt;Task> m_initTask;
-    std::unique_ptr&lt;Task> m_idleTask;
-    std::unique_ptr&lt;Task> m_processingTask;
-    std::unique_ptr&lt;Task> m_errorTask;
-    std::unique_ptr&lt;Task> m_shutdownTask;
-};</code></pre>
+        <code-from-file src="./code/switch-example.cxx" language="cpp"></code-from-file>
     </section>
 
-    <!-- Add highlight.js script at the end of body -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/cpp.min.js"></script>
-    <script>
-        document.addEventListener('DOMContentLoaded', (event) => {
-            document.querySelectorAll('pre code').forEach((block) => {
-                hljs.highlightBlock(block);
-            });
-        });
-    </script>
 </body>
 
 </html>

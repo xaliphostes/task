@@ -1,18 +1,24 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Algorithm - Task Framework Documentation</title>
     <link rel="stylesheet" href="styles.css">
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/highlight.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/languages/javascript.min.js"></script>
+    <script src="code-highlighter.js"></script>
 </head>
+
 <body>
     <a href="index.html" class="back-link">Back to Index</a>
-    
+
     <section class="section">
         <h1>Algorithm</h1>
         <p class="inheritance">Inherits from: <a href="task.html">Task</a></p>
-        
+
         <div class="toc">
             <h4>Contents</h4>
             <ul>
@@ -28,58 +34,34 @@
                 <li><a href="#best-practices">Best Practices</a></li>
             </ul>
         </div>
-        
+
         <div id="overview" class="card">
-            <p>The <code>Algorithm</code> class is a core component of the task library that provides a framework for implementing executable algorithms with standardized signaling, progress reporting, and execution control. It extends the base <code>Task</code> class to add algorithm-specific functionality including execution state tracking, cancellation support, and dirty state management.</p>
+            <p>The <code>Algorithm</code> class is a core component of the task library that provides a framework for
+                implementing executable algorithms with standardized signaling, progress reporting, and execution
+                control. It extends the base <code>Task</code> class to add algorithm-specific functionality including
+                execution state tracking, cancellation support, and dirty state management.</p>
         </div>
-        
+
         <h2 id="features">Features</h2>
         <ul class="feature-list">
-            <li><strong>Standardized Execution:</strong> Common interface for algorithm implementation and execution</li>
+            <li><strong>Standardized Execution:</strong> Common interface for algorithm implementation and execution
+            </li>
             <li><strong>Progress Reporting:</strong> Built-in mechanism for reporting execution progress</li>
             <li><strong>Cancellation Support:</strong> Ability to request and detect stop requests during execution</li>
             <li><strong>State Management:</strong> Tracking of "dirty" state to determine if re-execution is needed</li>
             <li><strong>Asynchronous Execution:</strong> Support for running algorithms in background threads</li>
-            <li><strong>Signal-Based Communication:</strong> Events for algorithm lifecycle (started, finished, errors)</li>
-            <li><strong>Execution Arguments:</strong> Flexible argument passing mechanism via <code>ArgumentPack</code></li>
+            <li><strong>Signal-Based Communication:</strong> Events for algorithm lifecycle (started, finished, errors)
+            </li>
+            <li><strong>Execution Arguments:</strong> Flexible argument passing mechanism via <code>ArgumentPack</code>
+            </li>
         </ul>
-        
+
         <h2 id="interface">Class Interface</h2>
-        <pre><code>class Algorithm : public Task {
-public:
-    // Constructor & destructor
-    Algorithm();
-    virtual ~Algorithm() = default;
-    
-    // Core algorithm execution method (must be implemented by subclasses)
-    virtual void exec(const ArgumentPack &args = {}) = 0;
-    
-    // Execution control
-    bool stopRequested() const;
-    void stop();
-    bool isRunning() const;
-    bool isDirty() const;
-    void setDirty(bool dirty);
-    
-    // Progress reporting
-    void reportProgress(float progress);
-    
-    // Asynchronous execution
-    std::future<void> run(const ArgumentPack &args = {});
-    
-protected:
-    // Internal implementation of run
-    void runImpl(const ArgumentPack &args);
-    
-private:
-    bool m_dirty;
-    bool m_stopRequested;
-    bool m_isRunning;
-};</code></pre>
-        
+        <div id="ex1"></div>
+
         <h2 id="signals">Signals</h2>
         <p>Algorithm emits the following signals:</p>
-        
+
         <div class="table-container">
             <table>
                 <thead>
@@ -118,257 +100,338 @@ private:
                 </tbody>
             </table>
         </div>
-        
+
         <h2 id="usage">Usage Example</h2>
         <div class="example-header">Algorithm Implementation Example</div>
-        <pre class="example-content"><code>// Create a custom algorithm by extending the Algorithm class
-class DataProcessor : public Algorithm {
-public:
-    DataProcessor() {
-        // Create additional signals if needed
-        createDataSignal("result");
-    }
-    
-    void setData(const std::vector<double>& data) {
-        m_data = data;
-        setDirty(true); // Mark as needing execution
-    }
-    
-    // Implement the required exec method
-    void exec(const ArgumentPack& args = {}) override {
-        if (m_data.empty()) {
-            emitString("error", "No data to process");
-            return;
-        }
-        
-        double sum = 0.0;
-        double min = m_data[0];
-        double max = m_data[0];
-        
-        // Process data with progress reporting
-        for (size_t i = 0; i < m_data.size(); ++i) {
-            // Check for cancellation
-            if (stopRequested()) {
-                emitString("warn", "Processing stopped by user");
-                return;
-            }
-            
-            // Process this data point
-            double value = m_data[i];
-            sum += value;
-            min = std::min(min, value);
-            max = std::max(max, value);
-            
-            // Report progress
-            float progress = static_cast<float>(i + 1) / m_data.size();
-            reportProgress(progress);
-        }
-        
-        // Calculate final results
-        double mean = sum / m_data.size();
-        
-        // Emit results
-        ArgumentPack resultArgs;
-        resultArgs.add<double>(min);
-        resultArgs.add<double>(max);
-        resultArgs.add<double>(mean);
-        emit("result", resultArgs);
-        
-        emitString("log", "Data processing completed successfully");
-    }
-    
-private:
-    std::vector<double> m_data;
-};</code></pre>
-        
+        <div id="ex2"></div>
+
+
         <div class="example-header">Using the Algorithm</div>
-        <pre class="example-content"><code>// Using the algorithm
-void processData() {
-    // Create the algorithm
-    auto processor = std::make_shared<DataProcessor>();
-    
-    // Set data to process
-    std::vector<double> data = {1.2, 3.4, 5.6, 7.8, 9.0};
-    processor->setData(data);
-    
-    // Connect to signals
-    processor->connectData("result", [](const ArgumentPack& args) {
-        double min = args.get<double>(0);
-        double max = args.get<double>(1);
-        double mean = args.get<double>(2);
-        
-        std::cout << "Results: min=" << min << ", max=" << max 
-                  << ", mean=" << mean << std::endl;
-    });
-    
-    // Execute asynchronously
-    auto future = processor->run();
-    
-    // Wait for completion if needed
-    future.wait();
-}</code></pre>
-        
+        <div id="ex3"></div>
+
         <h2 id="dirty-state">The Dirty State</h2>
-        <p>The Algorithm class maintains a "dirty" state that indicates whether the algorithm needs to be re-executed:</p>
-        
+        <p>The Algorithm class maintains a "dirty" state that indicates whether the algorithm needs to be re-executed:
+        </p>
+
         <ul class="feature-list">
             <li><code>isDirty()</code>: Returns true if the algorithm's input has changed since last execution</li>
             <li><code>setDirty(bool)</code>: Explicitly sets the dirty state</li>
         </ul>
-        
+
         <p>This mechanism is useful for:</p>
         <ul class="feature-list">
             <li>Avoiding unnecessary re-execution</li>
             <li>Forcing re-execution when needed</li>
             <li>Tracking when inputs have changed</li>
         </ul>
-        
+
         <div class="note">
-            <strong>Note:</strong> Setting dirty to true while an algorithm is running causes a stop request to be issued.
+            <strong>Note:</strong> Setting dirty to true while an algorithm is running causes a stop request to be
+            issued.
         </div>
-        
+
         <h2 id="async">Asynchronous Execution</h2>
         <p>The <code>run()</code> method provides asynchronous execution using C++ futures:</p>
-        
-        <pre><code>// Start algorithm in a background thread
-std::future<void> future = algorithm->run();
 
-// Do other work while algorithm executes
+        <div id="ex4"></div>
 
-// Wait for completion when needed
-future.wait();</code></pre>
-        
+
         <p>This allows algorithms to run in the background without blocking the main thread.</p>
-        
+
         <h2 id="cancellation">Cancellation Mechanism</h2>
         <p>Algorithms can be cancelled during execution:</p>
-        
+
         <ol>
             <li><strong>Requesting Cancellation:</strong> Call <code>stop()</code> to set the stop flag</li>
-            <li><strong>Checking for Cancellation:</strong> Algorithm should periodically call <code>stopRequested()</code></li>
+            <li><strong>Checking for Cancellation:</strong> Algorithm should periodically call
+                <code>stopRequested()</code></li>
             <li><strong>Handling Cancellation:</strong> If stop is requested, algorithm can clean up and exit</li>
         </ol>
-        
+
         <div class="example-header">Handling Cancellation</div>
-        <pre class="example-content"><code>void exec(const ArgumentPack& args) override {
-    for (int i = 0; i < 100; i++) {
-        // Check for cancellation frequently
-        if (stopRequested()) {
-            emitString("log", "Operation cancelled");
-            return; // Exit early
-        }
-        
-        // Perform work step
-        // ...
-        
-        // Report progress
-        reportProgress(static_cast<float>(i) / 100.0f);
-    }
-}</code></pre>
-        
+        <div id="ex5"></div>
+
         <h2 id="lifecycle">Lifecycle</h2>
         <p>An Algorithm goes through the following lifecycle:</p>
-        
+
         <ol>
-            <li><strong>Construction:</strong> Internal state initialized (dirty=true, running=false, stopRequested=false)</li>
+            <li><strong>Construction:</strong> Internal state initialized (dirty=true, running=false,
+                stopRequested=false)</li>
             <li><strong>Configuration:</strong> Algorithm-specific parameters set by calling its methods</li>
-            <li><strong>Execution Start:</strong> <code>run()</code> or <code>runImpl()</code> called, emits "started" signal</li>
+            <li><strong>Execution Start:</strong> <code>run()</code> or <code>runImpl()</code> called, emits "started"
+                signal</li>
             <li><strong>Execution:</strong> <code>exec()</code> implementation runs, may report progress</li>
             <li><strong>Execution End:</strong> Algorithm completes, emits "finished" signal</li>
             <li><strong>Error Handling:</strong> If an exception occurs, emits "error" signal with details</li>
         </ol>
-        
+
         <p>This lifecycle can be repeated multiple times for the same algorithm instance.</p>
-        
+
         <div class="note">
-            <p>The implementation of <code>runImpl()</code> automatically handles the proper emission of "started" and "finished" signals, as well as the management of the <code>m_isRunning</code> state flag.</p>
+            <p>The implementation of <code>runImpl()</code> automatically handles the proper emission of "started" and
+                "finished" signals, as well as the management of the <code>m_isRunning</code> state flag.</p>
         </div>
-        
+
         <h2 id="implementation">Implementation Details</h2>
         <p>Here's a simplified view of the key implementation methods:</p>
-        
+
         <div class="example-header">Constructor Implementation</div>
-        <pre class="example-content"><code>inline Algorithm::Algorithm()
-    : m_dirty(true), m_stopRequested(false), m_isRunning(false) {
-    // Add a progress signal that takes a float parameter
-    createDataSignal("progress");
-}</code></pre>
-        
+        <div id="ex6"></div>
+
         <div class="example-header">Progress Reporting Implementation</div>
-        <pre class="example-content"><code>// Report progress (0.0 to 1.0)
-inline void Algorithm::reportProgress(float progress) {
-    ArgumentPack args;
-    args.add<float>(progress);
-    emit("progress", args);
-}</code></pre>
-        
+        <div id="ex7"></div>
+
         <div class="example-header">Asynchronous Execution Implementation</div>
-        <pre class="example-content"><code>// Asynchronous execution with variable arguments
-inline std::future<void> Algorithm::run(const ArgumentPack &args) {
-    auto argsClone = args.clone();
-    return std::async(std::launch::async,
-                      [this, argsClone = std::move(argsClone)]() { 
-                          this->runImpl(argsClone); 
-                      });
-}</code></pre>
-        
+        <div id="ex8"></div>
+
         <div class="example-header">Run Implementation</div>
-        <pre class="example-content"><code>inline void Algorithm::runImpl(const ArgumentPack &args) {
-    if (m_isRunning) {
-        if (m_dirty) {
-            m_stopRequested = true;
-        }
-        return;
-    }
+        <div id="ex9"></div>
 
-    setDirty(false);
-    m_stopRequested = false;
-    m_isRunning = true;
-
-    emit("started");
-
-    try {
-        exec(args);
-    } catch (const std::exception &e) {
-        m_isRunning = false;
-        emitString("error", e.what());
-        throw; // Re-throw the exception
-    } catch (...) {
-        m_isRunning = false;
-        emitString("error", "Unknown exception during algorithm execution");
-        throw; // Re-throw the exception
-    }
-
-    m_isRunning = false;
-    emit("finished");
-}</code></pre>
-        
         <h2 id="best-practices">Best Practices</h2>
         <ul class="feature-list">
-            <li><strong>Check Stop Requests:</strong> Call <code>stopRequested()</code> regularly during long-running operations</li>
-            <li><strong>Report Progress:</strong> Use <code>reportProgress()</code> to provide feedback on execution status</li>
+            <li><strong>Check Stop Requests:</strong> Call <code>stopRequested()</code> regularly during long-running
+                operations</li>
+            <li><strong>Report Progress:</strong> Use <code>reportProgress()</code> to provide feedback on execution
+                status</li>
             <li><strong>Handle Exceptions:</strong> Catch and report exceptions specific to your algorithm</li>
-            <li><strong>Manage Dirty State:</strong> Set dirty=true when inputs change to indicate re-execution is needed</li>
-            <li><strong>Use Run for Background Execution:</strong> Use <code>run()</code> for asynchronous execution rather than calling <code>exec()</code> directly</li>
+            <li><strong>Manage Dirty State:</strong> Set dirty=true when inputs change to indicate re-execution is
+                needed</li>
+            <li><strong>Use Run for Background Execution:</strong> Use <code>run()</code> for asynchronous execution
+                rather than calling <code>exec()</code> directly</li>
             <li><strong>Define Clear Signals:</strong> Create algorithm-specific signals for returning results</li>
-            <li><strong>Clean Up Resources:</strong> Ensure resources are released properly, especially if cancellation occurs</li>
+            <li><strong>Clean Up Resources:</strong> Ensure resources are released properly, especially if cancellation
+                occurs</li>
         </ul>
-        
+
         <h2 id="extensions">Extensions</h2>
         <p>Algorithm is extended by several specialized classes in the framework:</p>
-        
+
         <ul class="feature-list">
-            <li><strong><a href="flowalgorithm.html">FlowAlgorithm</a>:</strong> Extends Algorithm to process sequences of jobs</li>
-            <li><strong><a href="parallelalgorithm.html">ParallelAlgorithm</a>:</strong> Provides parallel processing of jobs</li>
-            <li><strong><a href="threadpool.html">ThreadPool</a>:</strong> Specializes Algorithm to manage collections of Runnable tasks</li>
+            <li><strong><a href="flowalgorithm.html">FlowAlgorithm</a>:</strong> Extends Algorithm to process sequences
+                of jobs</li>
+            <li><strong><a href="parallelalgorithm.html">ParallelAlgorithm</a>:</strong> Provides parallel processing of
+                jobs</li>
+            <li><strong><a href="threadpool.html">ThreadPool</a>:</strong> Specializes Algorithm to manage collections
+                of Runnable tasks</li>
         </ul>
-        
+
         <div class="note">
-            <strong>Note:</strong> When implementing a new algorithm, consider whether one of the existing specialized algorithm classes might provide functionality that matches your requirements.
+            <strong>Note:</strong> When implementing a new algorithm, consider whether one of the existing specialized
+            algorithm classes might provide functionality that matches your requirements.
         </div>
     </section>
+
+    <script type="code-block" language="cpp" target="ex1">
+        class Algorithm : public Task {
+        public:
+            // Constructor & destructor
+            Algorithm();
+            virtual ~Algorithm() = default;
+            
+            // Core algorithm execution method (must be implemented by subclasses)
+            virtual void exec(const ArgumentPack &args = {}) = 0;
+            
+            // Execution control
+            bool stopRequested() const;
+            void stop();
+            bool isRunning() const;
+            bool isDirty() const;
+            void setDirty(bool dirty);
+            
+            // Progress reporting
+            void reportProgress(float progress);
+            
+            // Asynchronous execution
+            std::future<void> run(const ArgumentPack &args = {});
+            
+        protected:
+            // Internal implementation of run
+            void runImpl(const ArgumentPack &args);
+            
+        private:
+            bool m_dirty;
+            bool m_stopRequested;
+            bool m_isRunning;
+        };
+    </script>
+
+    <script type="code-block" language="cpp" target="ex2">
+        // Create a custom algorithm by extending the Algorithm class
+        class DataProcessor : public Algorithm {
+        public:
+            DataProcessor() {
+                // Create additional signals if needed
+                createDataSignal("result");
+            }
+            
+            void setData(const std::vector<double>& data) {
+                m_data = data;
+                setDirty(true); // Mark as needing execution
+            }
+            
+            // Implement the required exec method
+            void exec(const ArgumentPack& args = {}) override {
+                if (m_data.empty()) {
+                    emitString("error", "No data to process");
+                    return;
+                }
+                
+                double sum = 0.0;
+                double min = m_data[0];
+                double max = m_data[0];
+                
+                // Process data with progress reporting
+                for (size_t i = 0; i < m_data.size(); ++i) {
+                    // Check for cancellation
+                    if (stopRequested()) {
+                        emitString("warn", "Processing stopped by user");
+                        return;
+                    }
+                    
+                    // Process this data point
+                    double value = m_data[i];
+                    sum += value;
+                    min = std::min(min, value);
+                    max = std::max(max, value);
+                    
+                    // Report progress
+                    float progress = static_cast<float>(i + 1) / m_data.size();
+                    reportProgress(progress);
+                }
+                
+                // Calculate final results
+                double mean = sum / m_data.size();
+                
+                // Emit results
+                ArgumentPack resultArgs;
+                resultArgs.add<double>(min);
+                resultArgs.add<double>(max);
+                resultArgs.add<double>(mean);
+                emit("result", resultArgs);
+                
+                emitString("log", "Data processing completed successfully");
+            }
+            
+        private:
+            std::vector<double> m_data;
+        };
+    </script>
+
+    <script type="code-block" language="cpp" target="ex3">
+        // Using the algorithm
+        void processData() {
+            // Create the algorithm
+            auto processor = std::make_shared<DataProcessor>();
+            
+            // Set data to process
+            std::vector<double> data = {1.2, 3.4, 5.6, 7.8, 9.0};
+            processor->setData(data);
+            
+            // Connect to signals
+            processor->connectData("result", [](const ArgumentPack& args) {
+                double min = args.get<double>(0);
+                double max = args.get<double>(1);
+                double mean = args.get<double>(2);
+                
+                std::cout << "Results: min=" << min << ", max=" << max 
+                        << ", mean=" << mean << std::endl;
+            });
+            
+            // Execute asynchronously
+            auto future = processor->run();
+            
+            // Wait for completion if needed
+            future.wait();
+        }
+    </script>
+
+    <script type="code-block" language="cpp" target="ex4">
+        // Start algorithm in a background thread
+        std::future<void> future = algorithm->run();
+
+        // Do other work while algorithm executes
+
+        // Wait for completion when needed
+        future.wait();
+    </script>
+
+    <script type="code-block" language="cpp" target="ex5">
+        void exec(const ArgumentPack& args) override {
+            for (int i = 0; i < 100; i++) {
+                // Check for cancellation frequently
+                if (stopRequested()) {
+                    emitString("log", "Operation cancelled");
+                    return; // Exit early
+                }
+                
+                // Perform work step
+                // ...
+                
+                // Report progress
+                reportProgress(static_cast<float>(i) / 100.0f);
+            }
+        }
+    </script>
+
+    <script type="code-block" language="cpp" target="ex6">
+        inline Algorithm::Algorithm(): m_dirty(true), m_stopRequested(false), m_isRunning(false) {
+            // Add a progress signal that takes a float parameter
+            createDataSignal("progress");
+        }
+    </script>
+
+    <script type="code-block" language="cpp" target="ex7">
+        // Report progress (0.0 to 1.0)
+        inline void Algorithm::reportProgress(float progress) {
+            ArgumentPack args;
+            args.add<float>(progress);
+            emit("progress", args);
+        }
+    </script>
+
+    <script type="code-block" language="cpp" target="ex8">
+        // Asynchronous execution with variable arguments
+        inline std::future<void> Algorithm::run(const ArgumentPack &args) {
+            auto argsClone = args.clone();
+            return std::async(std::launch::async,
+                              [this, argsClone = std::move(argsClone)]() { 
+                                  this->runImpl(argsClone); 
+                              });
+        }
+    </script>
+
+    <script type="code-block" language="cpp" target="ex9">
+        inline void Algorithm::runImpl(const ArgumentPack &args) {
+            if (m_isRunning) {
+                if (m_dirty) {
+                    m_stopRequested = true;
+                }
+                return;
+            }
+
+            setDirty(false);
+            m_stopRequested = false;
+            m_isRunning = true;
+
+            emit("started");
+
+            try {
+                exec(args);
+            } catch (const std::exception &e) {
+                m_isRunning = false;
+                emitString("error", e.what());
+                throw; // Re-throw the exception
+            } catch (...) {
+                m_isRunning = false;
+                emitString("error", "Unknown exception during algorithm execution");
+                throw; // Re-throw the exception
+            }
+
+            m_isRunning = false;
+            emit("finished");
+        }
+    </script>
+
 </body>
+
 </html>
-    <!-- processor->connectData("progress", [](const ArgumentPack& args) {
-        float progress = args.get<float>(0);
-        std::cout << "Progress: " << (progress * 100) << "%" << std::endl; -->

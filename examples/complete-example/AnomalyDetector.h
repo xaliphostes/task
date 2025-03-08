@@ -5,7 +5,7 @@
 class AnomalyDetector : public CachedTask {
   public:
     AnomalyDetector() : CachedTask(std::chrono::minutes(30)) {
-        createDataSignal("anomaliesDetected");
+        createSignal("anomaliesDetected");
     }
 
     void setData(const std::vector<SensorData> &data,
@@ -73,10 +73,7 @@ class AnomalyDetector : public CachedTask {
         }
 
         // Report results
-        ArgumentPack args;
-        args.add<std::vector<ProcessedResult>>(anomalies);
-        args.add<std::string>(m_sensorId);
-        emit("anomaliesDetected", args);
+        emit("anomaliesDetected", ArgumentPack(anomalies, m_sensorId));
 
         emitString("log", "Detected " + std::to_string(anomalies.size()) +
                               " anomalies for sensor " + m_sensorId);

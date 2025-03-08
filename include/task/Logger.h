@@ -32,9 +32,9 @@ class Logger : public Task {
     explicit Logger(const std::string &prefix = ">>");
     virtual ~Logger() = default;
 
-    void log(const ArgumentPack &args);
-    void warn(const ArgumentPack &args);
-    void error(const ArgumentPack &args);
+    virtual void log(const ArgumentPack &args);
+    virtual void warn(const ArgumentPack &args);
+    virtual void error(const ArgumentPack &args);
 
     // Méthode statique pour créer les signaux pour une tâche
     static void createSignalsFor(Task *task);

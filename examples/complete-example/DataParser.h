@@ -5,7 +5,7 @@
 class DataParser : public RetryableTask {
   public:
     DataParser() : RetryableTask(3, std::chrono::seconds(2)) {
-        createDataSignal("parsed");
+        createSignal("parsed");
     }
 
     void setFile(const fs::path &filePath) { m_filePath = filePath; }
@@ -42,10 +42,7 @@ class DataParser : public RetryableTask {
             data.push_back(entry);
         }
 
-        ArgumentPack args;
-        args.add<std::vector<SensorData>>(data);
-        args.add<fs::path>(m_filePath);
-        emit("parsed", args);
+        emit("parsed", ArgumentPack(data, m_filePath));
 
         emitString("log", "Successfully parsed " + std::to_string(data.size()) +
                               " data points from " + m_filePath.string());

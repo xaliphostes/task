@@ -52,7 +52,7 @@ class SensorDataPipeline : public CompositeAlgorithm {
         m_logger->connectAllSignalsTo(m_reporter.get());
 
         // Connect monitor to pipeline to handle new files
-        m_monitor->connectData("newFiles", [this](const ArgumentPack &args) {
+        m_monitor->connect("newFiles", [this](const ArgumentPack &args) {
             const auto &files = args.get<std::vector<fs::path>>(0);
             this->handleNewFiles(files);
         });
@@ -69,7 +69,7 @@ class SensorDataPipeline : public CompositeAlgorithm {
 
         // Setup periodic saving of state
         m_stateSaver = std::make_unique<PeriodicTask>(std::chrono::minutes(5));
-        m_stateSaver->connectSimple("execute", [this]() {
+        m_stateSaver->connect("execute", [this]() {
             this->m_serializer->saveState();
             this->emitString("log", "Saved pipeline state");
         });
@@ -124,7 +124,7 @@ class SensorDataPipeline : public CompositeAlgorithm {
             parser->setFile(file);
 
             // Connect parser to handle parsed data
-            parser->connectData("parsed", [this](const ArgumentPack &args) {
+            parser->connect("parsed", [this](const ArgumentPack &args) {
                 const auto &data = args.get<std::vector<SensorData>>(0);
                 const auto &file = args.get<fs::path>(1);
                 this->handleParsedData(data, file);
@@ -157,14 +157,14 @@ class SensorDataPipeline : public CompositeAlgorithm {
         detector->setData(data, sensorId);
 
         // Connect detector to reporter
-        detector->connectData("anomaliesDetected", m_reporter.get(),
+        detector->connect("anomaliesDetected", m_reporter.get(),
                               &ResultReporter::onAnomaliesDetected);
 
         // Add to task group for execution
         m_anomalyGroup->addTask(detector);
 
         // Connect aggregator to reporter
-        m_aggregator->connectData("aggregated", m_reporter.get(),
+        m_aggregator->connect("aggregated", m_reporter.get(),
                                   &ResultReporter::onDataAggregated);
     }
 

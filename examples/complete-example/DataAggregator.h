@@ -1,11 +1,12 @@
 #pragma once
-#include <task/Algorithm.h>
 #include "types.h"
+#include <numeric>
+#include <task/Algorithm.h>
 
 // Task for aggregating sensor data
 class DataAggregator : public Algorithm {
   public:
-    DataAggregator() { createDataSignal("aggregated"); }
+    DataAggregator() { createSignal("aggregated"); }
 
     void exec(const ArgumentPack &args = {}) override {
         emitString("log", "Aggregating data for all sensors");
@@ -51,9 +52,7 @@ class DataAggregator : public Algorithm {
         }
 
         // Report results
-        ArgumentPack resultArgs;
-        resultArgs.add<std::vector<ProcessedResult>>(results);
-        emit("aggregated", resultArgs);
+        emit("aggregated", ArgumentPack(results));
 
         emitString("log", "Aggregated " + std::to_string(results.size()) +
                               " metrics across " +

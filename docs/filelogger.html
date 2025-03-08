@@ -1,0 +1,595 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FileLogger - Task Framework Documentation</title>
+    <link rel="stylesheet" href="styles.css">
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/highlight.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/languages/javascript.min.js"></script>
+    <script src="code-highlighter.js"></script>
+</head>
+
+<body>
+    <a href="index.html" class="back-link">Back to Index</a>
+
+    <section class="section">
+        <h1>FileLogger</h1>
+        <p class="inheritance">Inherits from: <a href="logger.html">Logger</a> → <a href="task.html">Task</a> → <a
+                href="signalslot.html">SignalSlot</a></p>
+
+        <div class="toc">
+            <h4>Contents</h4>
+            <ul>
+                <li><a href="#overview">Overview</a></li>
+                <li><a href="#features">Features</a></li>
+                <li><a href="#config">FileLoggerConfig</a></li>
+                <li><a href="#log-levels">Log Levels</a></li>
+                <li><a href="#interface">Class Interface</a></li>
+                <li><a href="#signals">Signals</a></li>
+                <li><a href="#usage">Usage Examples</a></li>
+                <li><a href="#file-rotation">File Rotation</a></li>
+                <li><a href="#thread-safety">Thread Safety</a></li>
+                <li><a href="#lifecycle">Lifecycle</a></li>
+                <li><a href="#best-practices">Best Practices</a></li>
+            </ul>
+        </div>
+
+        <div id="overview" class="card">
+            <p>The <code>FileLogger</code> class extends the <code>Logger</code> class to provide persistent file-based
+                logging with advanced features like log rotation, formatting options, and log level filtering. It
+                integrates seamlessly with the Task framework's signal-slot system while adding the ability to write log
+                messages to files with configurable naming patterns, size limits, and rotation policies.</p>
+        </div>
+
+        <h2 id="features">Features</h2>
+        <ul class="feature-list">
+            <li><strong>Persistent File Logging:</strong> Writes log messages to files for permanent record-keeping</li>
+            <li><strong>Log Level Filtering:</strong> Controls verbosity by filtering messages based on severity levels
+            </li>
+            <li><strong>Automatic File Rotation:</strong> Manages log file size by rotating files when they exceed
+                configured limits</li>
+            <li><strong>Customizable Formatting:</strong> Configures timestamps, log levels, and other formatting
+                options</li>
+            <li><strong>Signal-Based Notifications:</strong> Emits signals for file rotation and error events</li>
+            <li><strong>Thread Safety:</strong> Safely handles concurrent logging from multiple threads</li>
+            <li><strong>Rotation Callbacks:</strong> Supports registration of callbacks for when log files are rotated
+            </li>
+            <li><strong>Task Integration:</strong> Seamlessly connects to other Task components for centralized logging
+            </li>
+        </ul>
+
+        <h2 id="config">FileLoggerConfig</h2>
+        <p>The <code>FileLoggerConfig</code> structure provides extensive configuration options for the FileLogger:</p>
+
+        <div id="config-struct"></div>
+
+        <h2 id="log-levels">Log Levels</h2>
+        <p>FileLogger supports different severity levels for log messages:</p>
+
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Level</th>
+                        <th>Description</th>
+                        <th>Usage</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><span class="priority-level"
+                                style="background-color: rgba(163, 190, 140, 0.3); color: #4f7942;">Debug</span></td>
+                        <td>Detailed debugging information</td>
+                        <td>Development-time troubleshooting</td>
+                    </tr>
+                    <tr>
+                        <td><span class="priority-level"
+                                style="background-color: rgba(136, 192, 208, 0.3); color: #3a7b91;">Info</span></td>
+                        <td>General information about system operation</td>
+                        <td>Normal operational logging</td>
+                    </tr>
+                    <tr>
+                        <td><span class="priority-level"
+                                style="background-color: rgba(235, 203, 139, 0.3); color: #9e7c34;">Warning</span></td>
+                        <td>Potential issues that aren't critical</td>
+                        <td>Conditions that might need attention</td>
+                    </tr>
+                    <tr>
+                        <td><span class="priority-level"
+                                style="background-color: rgba(208, 135, 112, 0.3); color: #d08770;">Error</span></td>
+                        <td>Error conditions that affect operation</td>
+                        <td>Issues that need immediate attention</td>
+                    </tr>
+                    <tr>
+                        <td><span class="priority-level"
+                                style="background-color: rgba(191, 97, 106, 0.3); color: #bf616a;">Fatal</span></td>
+                        <td>Severe errors that may cause program termination</td>
+                        <td>Critical failures that prevent execution</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <p>Log level filtering allows you to control the verbosity of logging by setting a minimum level. Any messages
+            with a severity below the minimum level are not recorded.</p>
+
+        <h2 id="interface">Class Interface</h2>
+        <div id="class-interface"></div>
+
+        <h2 id="signals">Signals</h2>
+        <p>FileLogger inherits signals from Logger and adds the following:</p>
+
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Signal</th>
+                        <th>Type</th>
+                        <th>Description</th>
+                        <th>Arguments</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>fileRotated</td>
+                        <td>Simple</td>
+                        <td>Emitted when a log file is rotated</td>
+                        <td>None</td>
+                    </tr>
+                    <tr>
+                        <td>fileError</td>
+                        <td>Data</td>
+                        <td>Emitted when an error occurs during file operations</td>
+                        <td>std::string (error message)</td>
+                    </tr>
+                    <tr>
+                        <td>log <span>(inherited)</span></td>
+                        <td>Data</td>
+                        <td>Information log entries</td>
+                        <td>std::string (message)</td>
+                    </tr>
+                    <tr>
+                        <td>warn <span>(inherited)</span></td>
+                        <td>Data</td>
+                        <td>Warning log entries</td>
+                        <td>std::string (message)</td>
+                    </tr>
+                    <tr>
+                        <td>error <span>(inherited)</span></td>
+                        <td>Data</td>
+                        <td>Error log entries</td>
+                        <td>std::string (message)</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <h2 id="usage">Usage Examples</h2>
+        <div class="example-header">Basic FileLogger Setup</div>
+        <div id="ex1"></div>
+
+        <div class="example-header">Setting Log Levels</div>
+        <div id="ex2"></div>
+
+        <div class="example-header">Connecting to Task Components</div>
+        <div id="ex3"></div>
+
+        <div class="example-header">Structured Logging</div>
+        <div id="ex4"></div>
+
+        <h2 id="file-rotation">File Rotation</h2>
+        <p>FileLogger supports automatic log file rotation based on file size limits and can maintain a configurable
+            number of historical log files.</p>
+
+        <div class="example-header">File Rotation Configuration</div>
+        <div id="ex5"></div>
+
+        <div class="example-header">Rotation Callbacks</div>
+        <div id="ex6"></div>
+
+        <div class="note">
+            <strong>Note:</strong> When a log file is rotated, FileLogger properly closes the current file, creates a
+            new file with the configured naming pattern, and can optionally delete old log files to maintain the
+            configured maximum number of files.
+        </div>
+
+        <h2 id="thread-safety">Thread Safety</h2>
+        <p>The FileLogger implementation is thread-safe and can handle concurrent logging requests from multiple
+            threads:</p>
+        <ul class="feature-list">
+            <li>All file operations are protected by a mutex</li>
+            <li>Log message formatting and writing is atomic</li>
+            <li>Configuration changes are thread-safe</li>
+            <li>Rotation operations are synchronized to prevent interference</li>
+        </ul>
+
+        <div class="example-header">Multi-threaded Logging</div>
+        <div id="ex7"></div>
+
+        <h2 id="lifecycle">Lifecycle</h2>
+        <p>A FileLogger goes through the following lifecycle:</p>
+
+        <ol>
+            <li><strong>Construction:</strong> Initialize with configuration and optionally set minimum log level</li>
+            <li><strong>File Initialization:</strong> Create log directory if needed and open initial log file</li>
+            <li><strong>Operation:</strong> Log messages to file according to configuration and log level filtering</li>
+            <li><strong>File Rotation:</strong> Rotate log files when size limits are reached</li>
+            <li><strong>Reconfiguration:</strong> Optionally update configuration during runtime</li>
+            <li><strong>Destruction:</strong> Properly close log file and release resources</li>
+        </ol>
+
+        <h2 id="best-practices">Best Practices</h2>
+        <ul class="feature-list">
+            <li><strong>Log Level Selection:</strong> Use appropriate log levels (Debug for development, Warning+ for
+                production)</li>
+            <li><strong>File Sizing:</strong> Configure reasonable file size limits based on application logging volume
+            </li>
+            <li><strong>Directory Management:</strong> Use absolute paths for log directories in production environments
+            </li>
+            <li><strong>Signal Connections:</strong> Connect FileLogger to all relevant Task components for
+                comprehensive logging</li>
+            <li><strong>Error Handling:</strong> Connect to the fileError signal to monitor logging system issues</li>
+            <li><strong>Structured Formatting:</strong> Consider using JSON or another structured format for
+                machine-parseable logs</li>
+            <li><strong>Regular Rotation:</strong> Implement time-based rotation in addition to size-based for
+                long-running applications</li>
+            <li><strong>Performance Tuning:</strong> Adjust flushAfterEachWrite based on reliability vs. performance
+                needs</li>
+        </ul>
+
+        <div class="note">
+            <strong>Performance Note:</strong> In high-throughput applications, consider setting flushAfterEachWrite to
+            false and using a higher minimum log level to reduce I/O overhead. For critical sections, you can explicitly
+            call flush() when needed.
+        </div>
+    </section>
+
+    <script type="code-block" language="c" target="config-struct">
+    struct FileLoggerConfig {
+        // Filename and path settings
+        std::filesystem::path logDirectory = "logs";    // Directory for log files
+        std::string filenamePattern = "log_%Y%m%d.txt"; // Filename with optional time format patterns
+        bool createDirectoryIfNotExists = true;         // Auto-create log directory
+
+        // File behavior settings
+        bool appendToFile = true;                       // Whether to append to existing log files
+        bool flushAfterEachWrite = true;                // Force flush after each log entry
+        std::streamsize maxFileSize = 10 * 1024 * 1024; // Max size in bytes (10 MB default), 0 = unlimited
+        int maxFiles = 5;                               // Maximum number of log files to keep (0 = unlimited)
+        
+        // Timestamp settings
+        std::string timestampFormat = "[%Y-%m-%d %H:%M:%S] "; // Timestamp format for log entries
+        bool includeTimestamps = true;                        // Whether to add timestamps to log entries
+        
+        // Log format settings
+        bool includeLogLevel = true;                    // Whether to include log level in output
+        std::string logSeparator = " | ";               // Separator between timestamp, level, and message
+        bool includeTaskName = false;                   // Whether to include originating task name (if available)
+    };
+    </script>
+
+    <script type="code-block" language="cpp" target="class-interface">
+    class FileLogger : public Logger {
+    public:
+        /**
+        * @brief Constructor with optional configuration and log level
+        * @param config The configuration settings for the file logger
+        * @param minimumLevel The minimum log level to record (default: Debug)
+        * @param taskName Optional name to identify this logger
+        */
+        explicit FileLogger(
+            const FileLoggerConfig& config = FileLoggerConfig(),
+            LogLevel minimumLevel = LogLevel::Debug,
+            const std::string& taskName = "FileLogger"
+        );
+        
+        /**
+        * @brief Destructor that ensures log file is properly closed
+        */
+        virtual ~FileLogger();
+        
+        /**
+        * @brief Override to log messages to file in addition to base behavior
+        * @param args The ArgumentPack containing the log message
+        */
+        void log(const ArgumentPack &args) override;
+        
+        /**
+        * @brief Override to log warnings to file in addition to base behavior
+        * @param args The ArgumentPack containing the warning message
+        */
+        void warn(const ArgumentPack &args) override;
+        
+        /**
+        * @brief Override to log errors to file in addition to base behavior
+        * @param args The ArgumentPack containing the error message
+        */
+        void error(const ArgumentPack &args) override;
+        
+        /**
+        * @brief Explicitly log a message with a specific log level
+        * @param level The severity level of the message
+        * @param message The message to log
+        * @param taskName Optional name of the originating task
+        */
+        void logWithLevel(LogLevel level, const std::string& message, const std::string& taskName = "");
+        
+        /**
+        * @brief Set the minimum log level that will be recorded
+        * @param level The new minimum log level
+        */
+        void setMinimumLogLevel(LogLevel level);
+        
+        /**
+        * @brief Get the current minimum log level
+        * @return The current minimum log level
+        */
+        LogLevel getMinimumLogLevel() const;
+        
+        /**
+        * @brief Update the logger configuration
+        * @param config The new configuration settings
+        * @return true if successful, false if there was an error
+        */
+        bool updateConfig(const FileLoggerConfig& config);
+        
+        /**
+        * @brief Get the current logger configuration
+        * @return A copy of the current configuration
+        */
+        FileLoggerConfig getConfig() const;
+        
+        /**
+        * @brief Get the path of the current log file
+        * @return The full path to the current log file or empty if not logging to file
+        */
+        std::filesystem::path getCurrentLogFilePath() const;
+        
+        /**
+        * @brief Rotate the log file, closing the current one and creating a new one
+        * @return true if rotation was successful, false otherwise
+        */
+        bool rotateLogFile();
+        
+        /**
+        * @brief Flush any buffered log data to disk
+        */
+        void flush();
+        
+        /**
+        * @brief Register a callback to be notified when log rotation occurs
+        * @param callback Function to call when a log file is rotated
+        * @return An ID that can be used to unregister the callback
+        */
+        int registerRotationCallback(std::function<void(const std::filesystem::path&)> callback);
+        
+        /**
+        * @brief Unregister a previously registered rotation callback
+        * @param callbackId The ID returned from registerRotationCallback
+        * @return true if the callback was found and removed, false otherwise
+        */
+        bool unregisterRotationCallback(int callbackId);
+    };
+    </script>
+
+    <script type="code-block" language="cpp" target="ex1">
+    // Create a basic FileLogger with default settings
+    FileLogger logger;
+
+    // Create a FileLogger with custom configuration
+    FileLoggerConfig config {
+        .logDirectory = "/var/log/myapp",
+        .filenamePattern = "app_%Y%m%d_%H%M%S.log",
+        .maxFileSize = 5 * 1024 * 1024,  // 5MB per file
+        .maxFiles = 10                   // Keep 10 most recent files
+    };
+
+    FileLogger customLogger(config, LogLevel::Info, "MyApplication");
+
+    // Log some messages
+    logger.log("Application starting");
+
+    // Or use the explicit level-based logging
+    customLogger.logWithLevel(LogLevel::Info, "Application initialized");
+    customLogger.logWithLevel(LogLevel::Warning, "Configuration file not found, using defaults");
+        </script>
+
+    <script type="code-block" language="cpp" target="ex2">
+    // Create logger with Debug level - all messages are logged
+    FileLogger debugLogger(FileLoggerConfig(), LogLevel::Debug);
+
+    // Create logger with Warning level - only Warning, Error, and Fatal messages are logged
+    FileLogger productionLogger(FileLoggerConfig(), LogLevel::Warning);
+
+    // Log at different levels
+    debugLogger.logWithLevel(LogLevel::Debug, "This will be logged by debugLogger");
+    debugLogger.logWithLevel(LogLevel::Info, "This will be logged by debugLogger");
+    debugLogger.logWithLevel(LogLevel::Warning, "This will be logged by both loggers");
+
+    productionLogger.logWithLevel(LogLevel::Debug, "This will NOT be logged by productionLogger");
+    productionLogger.logWithLevel(LogLevel::Info, "This will NOT be logged by productionLogger");
+    productionLogger.logWithLevel(LogLevel::Warning, "This will be logged by productionLogger");
+
+    // Change log level at runtime
+    debugLogger.setMinimumLogLevel(LogLevel::Error);
+    debugLogger.logWithLevel(LogLevel::Warning, "This will NOT be logged after level change");
+    debugLogger.logWithLevel(LogLevel::Error, "This will be logged after level change");
+    </script>
+
+    <script type="code-block" language="cpp" target="ex3">
+    // Create components to be monitored
+    FileLogger  logger;
+    MyAlgorithm algorithm;
+    ThreadPool  threadPool;
+    Chronometer chrono;
+
+    // Connect logger to all components
+    logger.connectAllSignalsTo(&algorithm);
+    logger.connectAllSignalsTo(&threadPool);
+    logger.connectAllSignalsTo(&chrono);
+
+    // Now all log messages from these components will be captured by the logger
+    chrono.start();
+    threadPool.add(std::move(std::make_unique<&MyTask>()));
+    threadPool.exec();
+    chrono.stop();
+
+    // For specific logging needs, create slots that log with specific levels
+    algorithm.connectSimple("started", [logger]() {
+        logger.logWithLevel(LogLevel::Info, "Algorithm started", "CustomHandler");
+    });
+
+    algorithm.connectData("error", [logger](const ArgumentPack& args) {
+        try {
+            std::string errorMsg = args.get<std::string>(0);
+            logger.logWithLevel(LogLevel::Error, "Algorithm error: " + errorMsg, "ErrorHandler");
+        } catch (const std::exception&) {
+            logger.logWithLevel(LogLevel::Error, "Unknown algorithm error", "ErrorHandler");
+        }
+    });
+    </script>
+
+    <script type="code-block" language="cpp" target="ex4">
+    // Create logger
+    FileLogger logger;
+
+    // Simple logging
+    logger.logWithLevel(LogLevel::Info, "User logged in: admin");
+
+    // Structured logging with JSON format
+    void logUserActivity(FileLogger& logger, const std::string& userId, 
+                        const std::string& action, bool success) {
+        std::stringstream ss;
+        ss << "{"
+        << "\"type\":\"user_activity\","
+        << "\"userId\":\"" << userId << "\","
+        << "\"action\":\"" << action << "\","
+        << "\"success\":" << (success ? "true" : "false") << ","
+        << "\"timestamp\":\"" << getCurrentISOTimestamp() << "\""
+        << "}";
+        
+        LogLevel level = success ? LogLevel::Info : LogLevel::Warning;
+        logger.logWithLevel(level, ss.str(), "UserSystem");
+    }
+
+    // Usage
+    logUserActivity(logger, "user123", "login", true);
+    logUserActivity(logger, "user456", "delete_account", false);
+
+    // Performance metrics logging
+    void logPerformanceMetric(FileLogger& logger, const std::string& operation, 
+                            double executionTimeMs, int itemsProcessed) {
+        std::stringstream ss;
+        ss << "{"
+        << "\"metric\":\"performance\","
+        << "\"operation\":\"" << operation << "\","
+        << "\"executionTimeMs\":" << executionTimeMs << ","
+        << "\"itemsProcessed\":" << itemsProcessed << ","
+        << "\"itemsPerSecond\":" << (itemsProcessed / (executionTimeMs / 1000.0))
+        << "}";
+        
+        logger.logWithLevel(LogLevel::Debug, ss.str(), "PerformanceMonitor");
+    }
+
+    // Usage
+    logPerformanceMetric(logger, "database_query", 150.5, 1000);
+    </script>
+
+    <script type="code-block" language="cpp" target="ex5">
+    // Configure file rotation based on size
+    FileLoggerConfig rotationConfig {
+        .maxFileSize = 1024 * 1024,                // 1MB max size
+        .maxFiles = 5,                             // Keep 5 most recent files
+        .filenamePattern = "app_%Y%m%d_%H%M%S.log" // Include timestamp in filename
+    };
+
+    FileLogger logger(rotationConfig);
+
+    // Logging will automatically trigger rotation when file size exceeds 1MB
+    // The system will maintain the 5 most recent log files
+    for (int i = 0; i < 10000; i++) {
+        logger.logWithLevel(LogLevel::Info, 
+            "This is log message " + std::to_string(i) + " with some additional content to increase size");
+    }
+
+    // To manually rotate log files (e.g., on application startup)
+    logger.rotateLogFile();
+    </script>
+
+    <script type="code-block" language="cpp" target="ex6">
+        FileLogger logger;
+
+    // Register a callback for log rotation
+    int callbackId = logger.registerRotationCallback([](const std::filesystem::path& oldPath) {
+        std::cout << "Log rotated: " << oldPath << std::endl;
+        
+        // Perform actions on the old log file, such as:
+        // - Compress it to save space
+        // - Upload it to a backup server
+        // - Send a notification to administrators
+        
+        // Example: Compress the old log file
+        std::system(("gzip " + oldPath.string()).c_str());
+    });
+
+    // Alternatively, connect to the fileRotated signal
+    logger.connectSimple("fileRotated", []() {
+        std::cout << "Log file rotation occurred" << std::endl;
+    });
+
+    // Connect to the fileError signal to monitor errors
+    logger.connectData("fileError", [](const ArgumentPack& args) {
+        try {
+            std::string errorMsg = args.get<std::string>(0);
+            std::cerr << "Log file error: " << errorMsg << std::endl;
+        } catch (const std::exception&) {
+            std::cerr << "Unknown log file error" << std::endl;
+        }
+    });
+
+    // Later, if needed, unregister the callback
+    logger.unregisterRotationCallback(callbackId);
+    </script>
+
+    <script type="code-block" language="cpp" target="ex7">
+        FileLogger logger;
+
+    // Create multiple threads that all log to the same logger
+    std::vector<std::thread> threads;
+
+    for (int i = 0; i < 10; i++) {
+        threads.emplace_back([logger, i]() {
+            // Each thread logs 100 messages
+            for (int j = 0; j < 100; j++) {
+                std::string message = "Thread " + std::to_string(i) + 
+                                    " message " + std::to_string(j);
+                
+                // Log at different levels
+                if (j % 20 == 0) {
+                    logger.logWithLevel(LogLevel::Warning, message);
+                } else if (j % 50 == 0) {
+                    logger.logWithLevel(LogLevel::Error, message);
+                } else {
+                    logger.logWithLevel(LogLevel::Info, message);
+                }
+                
+                // Simulate work
+                std::this_thread::sleep_for(std::chrono::milliseconds(1));
+            }
+        });
+    }
+
+    // Wait for all threads to complete
+    for (auto& thread : threads) {
+        thread.join();
+    }
+
+    // The FileLogger handles all concurrent access safely
+    </script>
+
+</body>
+
+</html>
